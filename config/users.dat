@@ -1,0 +1,5 @@
+# Vaultra Secure Server — Usuários
+# NÃO EDITE MANUALMENTE
+# Formato: id|username|senhaHash|salt|cargo|ativo|deveTrocarSenha|permissoes
+1|admin|639caea2c19e439e822921231b2cf9f51e283d99b3c4694ca189eb5f3cdbab4e|eee18308dc3dfa8c6f75daa2bba4c93c|ADMIN|true|true|/*:V,E,D,C
+2|Teste|d6d3eabb8389cbf072880982d87b87643a763c3f30ab12414739951aca2a82fa|03f898a2389f314b6f4455321bb69c0d|MODELADOR|true|false|/workspace/modelagem/*:V,E;/workspace/docs/*:V
