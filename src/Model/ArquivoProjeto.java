@@ -29,11 +29,18 @@ public class ArquivoProjeto {
     @Coluna(nome = "thumbnail_path", tipo = "VARCHAR(500)")
     private String thumbnailPath;
 
+    @Coluna(nome = "pasta_pai_id", tipo = "INTEGER")
+    private Integer pastaPaiId;
+
+    @Coluna(nome = "eh_pasta", tipo = "BOOLEAN", padrao = "false")
+    private boolean ehPasta;
+
     @Coluna(nome = "criado_em", tipo = "BIGINT")
     private long criadoEm;
 
     public ArquivoProjeto() {
         this.criadoEm = System.currentTimeMillis();
+        this.ehPasta = false;
     }
 
     public int getId() { return id; }
@@ -59,6 +66,12 @@ public class ArquivoProjeto {
 
     public String getThumbnailPath() { return thumbnailPath; }
     public void setThumbnailPath(String thumbnailPath) { this.thumbnailPath = thumbnailPath; }
+
+    public Integer getPastaPaiId() { return pastaPaiId; }
+    public void setPastaPaiId(Integer pastaPaiId) { this.pastaPaiId = pastaPaiId; }
+
+    public boolean isEhPasta() { return ehPasta; }
+    public void setEhPasta(boolean ehPasta) { this.ehPasta = ehPasta; }
 
     public long getCriadoEm() { return criadoEm; }
     public void setCriadoEm(long criadoEm) { this.criadoEm = criadoEm; }

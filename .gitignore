@@ -1,0 +1,17 @@
+# Compilação e binários
+bin/
+sources.txt
+
+# Arquivos locais contendo credenciais ou dados
+config/jwt_secret.key
+config/users.dat
+
+# Configurações do Eclipse/IDE
+.settings/
+.classpath
+.project
+
+# Arquivos temporários e de trava
+*~
+.~lock.*
+.DS_Store

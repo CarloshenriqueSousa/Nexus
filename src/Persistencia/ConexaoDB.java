@@ -38,10 +38,26 @@ public class ConexaoDB {
 			}
 		}
 
-		url = props.getProperty("db.url", "jdbc:postgresql://localhost:5432/nexus_db");
-		user = props.getProperty("db.user", "postgres");
-		password = props.getProperty("db.password", "postgres");
-		poolSize = Integer.parseInt(props.getProperty("db.pool.size", "5"));
+		url = System.getenv("DB_URL");
+		if (url == null || url.isBlank()) {
+			url = props.getProperty("db.url", "jdbc:postgresql://localhost:5432/nexus_db");
+		}
+
+		user = System.getenv("DB_USER");
+		if (user == null || user.isBlank()) {
+			user = props.getProperty("db.user", "postgres");
+		}
+
+		password = System.getenv("DB_PASSWORD");
+		if (password == null || password.isBlank()) {
+			password = props.getProperty("db.password", "postgres");
+		}
+
+		String poolSizeStr = System.getenv("DB_POOL_SIZE");
+		if (poolSizeStr == null || poolSizeStr.isBlank()) {
+			poolSizeStr = props.getProperty("db.pool.size", "5");
+		}
+		poolSize = Integer.parseInt(poolSizeStr);
 
 		pool = new LinkedBlockingQueue<>(poolSize);
 		disponivel = false;

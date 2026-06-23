@@ -156,30 +156,42 @@ public class AuthManager {
 	}
 
 	/**
-	 * Carrega chave secreta do arquivo ou gera uma nova de 256 bits.
+	 * Carrega chave secreta da variável de ambiente JWT_SECRET,
+	 * ou do arquivo se existir. Caso contrário, gera uma chave temporária segura em memória.
 	 */
 	private byte[] carregarOuGerarChave(String caminhoChave) {
-		Path path = Paths.get(caminhoChave);
-		try {
-			if (Files.exists(path)) {
-				String chaveHex = Files.readString(path).trim();
-				System.out.println("[JWT] Chave secreta carregada de: " + path.toAbsolutePath());
-				return hexParaBytes(chaveHex);
-			} else {
-				byte[] novaChave = new byte[32]; // 256 bits
-				new SecureRandom().nextBytes(novaChave);
-				String chaveHex = bytesParaHex(novaChave);
+		String envSecret = System.getenv("JWT_SECRET");
+		if (envSecret != null && !envSecret.isBlank()) {
+			System.out.println("[JWT] Chave secreta carregada da variável de ambiente (JWT_SECRET).");
+			return derivarChave(envSecret);
+		}
 
-				Files.createDirectories(path.getParent());
-				Files.writeString(path, chaveHex);
-				System.out.println("[JWT] Nova chave secreta gerada em: " + path.toAbsolutePath());
-				return novaChave;
+		if (caminhoChave != null && !caminhoChave.isBlank()) {
+			Path path = Paths.get(caminhoChave);
+			if (Files.exists(path)) {
+				try {
+					String chaveHex = Files.readString(path).trim();
+					System.out.println("[JWT] Chave secreta carregada do arquivo local: " + path.toAbsolutePath());
+					return hexParaBytes(chaveHex);
+				} catch (IOException e) {
+					System.err.println("[JWT] Erro ao ler arquivo de chave: " + e.getMessage());
+				}
 			}
-		} catch (IOException e) {
-			System.err.println("[JWT] Erro com arquivo de chave, gerando temporária: " + e.getMessage());
-			byte[] temporaria = new byte[32];
-			new SecureRandom().nextBytes(temporaria);
-			return temporaria;
+		}
+
+		// Se não há env nem arquivo, gera chave aleatória temporária de 256 bits segura em memória
+		byte[] temporaria = new byte[32];
+		new SecureRandom().nextBytes(temporaria);
+		System.out.println("[JWT] AVISO: Variável de ambiente JWT_SECRET não definida e arquivo de chave ausente. Gerada chave aleatória temporária em memória.");
+		return temporaria;
+	}
+
+	private byte[] derivarChave(String secret) {
+		try {
+			java.security.MessageDigest digest = java.security.MessageDigest.getInstance("SHA-256");
+			return digest.digest(secret.getBytes(StandardCharsets.UTF_8));
+		} catch (NoSuchAlgorithmException e) {
+			throw new RuntimeException("Erro ao derivar chave JWT com SHA-256", e);
 		}
 	}
 

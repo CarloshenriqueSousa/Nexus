@@ -16,14 +16,8 @@ import Persistencia.*;
  */
 public class UserStore {
 
-	private boolean dbOffline = false;
-
 	public UserStore(String caminhoArquivo) {
-		if (!ConexaoDB.isDisponivel()) {
-			dbOffline = true;
-			System.err.println("[UserStore] Banco indisponível — fallback local (users.dat).");
-			return;
-		}
+		ConexaoDB.validarDisponibilidade();
 		try {
 			// 1. Inicializar as tabelas do banco de dados para segurança
 			GerenciadorEntidade.inicializarTabela(User.class);
@@ -39,40 +33,8 @@ public class UserStore {
 				criarAdminPadrao();
 			}
 		} catch (Exception e) {
-			dbOffline = true;
-			System.err.println("[UserStore] Alerta: Falha ao inicializar o banco de dados. O servidor iniciará em modo de fallback local (users.dat).");
+			throw new PersistenciaException("Falha ao inicializar o banco de dados para UserStore.", e);
 		}
-	}
-
-	private List<User> lerUsuariosArquivo() {
-		List<User> lista = new ArrayList<>();
-		Path path = Paths.get("src/config/users.dat");
-		if (!Files.exists(path)) {
-			path = Paths.get("config/users.dat");
-		}
-		if (Files.exists(path)) {
-			try {
-				List<String> linhas = Files.readAllLines(path);
-				for (String linha : linhas) {
-					if (linha.isBlank() || linha.startsWith("#")) continue;
-					try {
-						User u = User.deserializar(linha);
-						lista.add(u);
-					} catch (Exception ignored) {}
-				}
-			} catch (IOException e) {
-				System.err.println("[UserStore] Erro ao ler backup users.dat: " + e.getMessage());
-			}
-		}
-		if (lista.isEmpty()) {
-			String salt = SenhaUtil.gerarSalt();
-			String hash = SenhaUtil.hashear("admin123", salt);
-			User admin = new User(1, "admin", hash, salt, Role.ADMIN);
-			admin.setDeveTrocarSenha(true);
-			admin.adicionarPermissao(Permissao.total("/*"));
-			lista.add(admin);
-		}
-		return lista;
 	}
 
 	private void criarAdminPadrao() {
@@ -103,11 +65,6 @@ public class UserStore {
 
 	/** Busca usuário por username (case-insensitive) */
 	public synchronized Optional<User> buscarPorUsername(String username) {
-		if (dbOffline) {
-			return lerUsuariosArquivo().stream()
-					.filter(u -> u.getUsername().equalsIgnoreCase(username))
-					.findFirst();
-		}
 		List<User> encontrados = GerenciadorEntidade.buscarPor(User.class, "username", username);
 		if (encontrados.isEmpty()) {
 			return Optional.empty();
@@ -119,11 +76,6 @@ public class UserStore {
 
 	/** Busca usuário por ID */
 	public synchronized Optional<User> buscarPorId(int id) {
-		if (dbOffline) {
-			return lerUsuariosArquivo().stream()
-					.filter(u -> u.getId() == id)
-					.findFirst();
-		}
 		Optional<User> opt = GerenciadorEntidade.buscarPorId(User.class, id);
 		opt.ifPresent(this::carregarPermissoes);
 		return opt;
@@ -131,9 +83,6 @@ public class UserStore {
 
 	/** Lista todos os usuários */
 	public synchronized List<User> listarTodos() {
-		if (dbOffline) {
-			return Collections.unmodifiableList(lerUsuariosArquivo());
-		}
 		List<User> todos = GerenciadorEntidade.buscarTodos(User.class);
 		for (User user : todos) {
 			carregarPermissoes(user);
