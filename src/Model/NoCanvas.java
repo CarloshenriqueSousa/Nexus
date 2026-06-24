@@ -38,11 +38,15 @@ public class NoCanvas {
     @Coluna(nome = "dados_extra", tipo = "TEXT")
     private String dadosExtra; // JSON livre
 
+    @Coluna(nome = "tenant_id", tipo = "INT", naoNulo = true, padrao = "1")
+    private int tenantId;
+
     public NoCanvas() {
         this.tipo = "arquivo";
         this.largura = 220;
         this.altura = 150;
         this.cor = "#3b82f6";
+        this.tenantId = 1;
     }
 
     public int getId() { return id; }
@@ -77,4 +81,7 @@ public class NoCanvas {
 
     public String getDadosExtra() { return dadosExtra; }
     public void setDadosExtra(String dadosExtra) { this.dadosExtra = dadosExtra; }
+
+    public int getTenantId() { return tenantId; }
+    public void setTenantId(int tenantId) { this.tenantId = tenantId; }
 }

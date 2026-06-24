@@ -7,7 +7,7 @@ public final class LoginPages {
 	public static String paginaLogin(String mensagemErro) {
 		String alerta = mensagemErro == null || mensagemErro.isBlank()
 				? ""
-				: "<p class=\"erro\">" + escapar(mensagemErro) + "</p>";
+				: "<div class=\"login-error\">" + escapar(mensagemErro) + "</div>";
 
 		return """
 				<!DOCTYPE html>
@@ -15,53 +15,54 @@ public final class LoginPages {
 				<head>
 				  <meta charset="UTF-8">
 				  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-				  <title>Login — Servidor HTTP</title>
-				  <style>
-				    * { box-sizing: border-box; }
-				    body {
-				      margin: 0; min-height: 100vh; display: grid; place-items: center;
-				      font-family: 'Segoe UI', system-ui, sans-serif;
-				      background: linear-gradient(135deg, #0f172a 0%%, #1e293b 50%%, #0f172a 100%%);
-				      color: #e2e8f0;
-				    }
-				    .card {
-				      width: min(420px, 92vw); padding: 32px; border-radius: 16px;
-				      background: rgba(15, 23, 42, 0.85); border: 1px solid #334155;
-				      box-shadow: 0 20px 60px rgba(0,0,0,0.45);
-				    }
-				    h1 { margin: 0 0 8px; font-size: 1.6rem; color: #f8fafc; }
-				    p.sub { margin: 0 0 24px; color: #94a3b8; font-size: 0.95rem; }
-				    label { display: block; margin-bottom: 6px; font-size: 0.85rem; color: #cbd5e1; }
-				    input {
-				      width: 100%%; padding: 12px 14px; margin-bottom: 16px; border-radius: 8px;
-				      border: 1px solid #475569; background: #0f172a; color: #f1f5f9;
-				    }
-				    input:focus { outline: 2px solid #3b82f6; border-color: #3b82f6; }
-				    button {
-				      width: 100%%; padding: 12px; border: none; border-radius: 8px;
-				      background: #2563eb; color: white; font-weight: 600; cursor: pointer;
-				    }
-				    button:hover { background: #1d4ed8; }
-				    .erro {
-				      background: #7f1d1d; color: #fecaca; padding: 10px 12px;
-				      border-radius: 8px; margin-bottom: 16px; font-size: 0.9rem;
-				    }
-				    .hint { margin-top: 16px; font-size: 0.8rem; color: #64748b; text-align: center; }
-				  </style>
+				  <title>Vaultra \u2014 Autentica\u00e7\u00e3o</title>
+				  <link rel="stylesheet" href="/css/vaultra.css">
 				</head>
-				<body>
-				  <div class="card">
-				    <h1>Entrar no Workspace</h1>
-				    <p class="sub">Autentique-se para acessar o painel do servidor.</p>
+				<body class="login-page">
+				  <div class="login-hero">
+				    <div class="login-hero-content">
+				      <div class="login-logo">
+				        <!-- TODO: Insert real SVG logo here -->
+				        <span class="login-logo-text">V</span>
+				      </div>
+				      <h1>Vaultra Data Platform</h1>
+				      <p class="login-hero-subtitle">Acesso seguro à infraestrutura de dados para engenharia, arquitetura e indústria.</p>
+				      <div class="login-features">
+				        <div class="login-feature">
+				          <div class="login-feature-icon">⚡</div>
+				          <span>Performance otimizada em Java puro</span>
+				        </div>
+				        <div class="login-feature">
+				          <div class="login-feature-icon">🔒</div>
+				          <span>Segurança premium com tokens JWT isolados</span>
+				        </div>
+				        <div class="login-feature">
+				          <div class="login-feature-icon">🗂️</div>
+				          <span>Armazenamento dinâmico no workspace interativo</span>
+				        </div>
+				      </div>
+				    </div>
+				  </div>
+				  <div class="login-form-side">
+				    <div class="login-form-header">
+				      <h2>Bem-vindo de volta</h2>
+				      <p>Insira suas credenciais para continuar.</p>
+				    </div>
 				    %s
-				    <form method="POST" action="/login">
-				      <label for="usuario">Usuário</label>
-				      <input id="usuario" name="usuario" type="text" autocomplete="username" required>
-				      <label for="senha">Senha</label>
-				      <input id="senha" name="senha" type="password" autocomplete="current-password" required>
-				      <button type="submit">Acessar</button>
+				    <form class="login-form" method="POST" action="/login">
+				      <div class="form-group">
+				        <label for="usuario">Usuário</label>
+				        <input id="usuario" name="usuario" type="text" autocomplete="username" placeholder="seu.usuario" required>
+				      </div>
+				      <div class="form-group">
+				        <label for="senha">Senha</label>
+				        <input id="senha" name="senha" type="password" autocomplete="current-password" placeholder="••••••••" required>
+				      </div>
+				      <div class="form-actions">
+				        <button type="submit" class="btn btn-primary btn-block">Acessar Vaultra</button>
+				      </div>
+				      <p class="login-hint">Acesso seguro garantido por HMAC-SHA256.</p>
 				    </form>
-				    <p class="hint">Sessão segura via cookie HttpOnly</p>
 				  </div>
 				</body>
 				</html>

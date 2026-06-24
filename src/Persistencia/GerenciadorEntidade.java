@@ -64,6 +64,77 @@ public class GerenciadorEntidade {
             }
             ConexaoDB.liberarConexao(conn);
         }
+
+        // Auto-migração: detectar colunas faltantes e adicioná-las via ALTER TABLE
+        migrarColunasNovas(classe, nomeTabela);
+    }
+
+    /**
+     * Verifica se todas as colunas definidas no modelo Java existem na tabela do banco.
+     * Se alguma estiver faltando, executa ALTER TABLE ADD COLUMN automaticamente.
+     */
+    private static void migrarColunasNovas(Class<?> classe, String nomeTabela) {
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            conn = ConexaoDB.obterConexao();
+
+            // Buscar colunas existentes na tabela
+            String sqlColunas = "SELECT column_name FROM information_schema.columns WHERE table_name = ?";
+            pstmt = conn.prepareStatement(sqlColunas);
+            pstmt.setString(1, nomeTabela);
+            rs = pstmt.executeQuery();
+
+            java.util.Set<String> colunasExistentes = new java.util.HashSet<>();
+            while (rs.next()) {
+                colunasExistentes.add(rs.getString("column_name").toLowerCase());
+            }
+            rs.close();
+            pstmt.close();
+
+            if (colunasExistentes.isEmpty()) {
+                // Tabela acabou de ser criada, todas as colunas já estão lá
+                return;
+            }
+
+            // Verificar cada campo do modelo
+            for (Field field : classe.getDeclaredFields()) {
+                if (field.isAnnotationPresent(Coluna.class) && !field.isAnnotationPresent(Id.class)) {
+                    Coluna col = field.getAnnotation(Coluna.class);
+                    String nomeColuna = col.nome().toLowerCase();
+
+                    if (!colunasExistentes.contains(nomeColuna)) {
+                        // Coluna faltante — adicionar via ALTER TABLE
+                        StringBuilder alterSql = new StringBuilder("ALTER TABLE ")
+                                .append(nomeTabela)
+                                .append(" ADD COLUMN ")
+                                .append(col.nome()).append(" ").append(col.tipo());
+
+                        if (!col.padrao().isEmpty()) {
+                            alterSql.append(" DEFAULT ").append(col.padrao());
+                        }
+
+                        System.out.println("[GerenciadorEntidade] Migrando coluna nova: " + nomeTabela + "." + col.nome());
+                        Statement stmt = conn.createStatement();
+                        try {
+                            stmt.execute(alterSql.toString());
+                            System.out.println("[GerenciadorEntidade] ✓ Coluna " + col.nome() + " adicionada com sucesso.");
+                        } catch (SQLException e) {
+                            System.err.println("[GerenciadorEntidade] Erro ao migrar coluna " + col.nome() + ": " + e.getMessage());
+                        } finally {
+                            stmt.close();
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("[GerenciadorEntidade] Erro na auto-migração de " + nomeTabela + ": " + e.getMessage());
+        } finally {
+            if (rs != null) try { rs.close(); } catch (SQLException ignored) {}
+            if (pstmt != null) try { pstmt.close(); } catch (SQLException ignored) {}
+            ConexaoDB.liberarConexao(conn);
+        }
     }
 
     public static <T> T salvar(T obj) {

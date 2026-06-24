@@ -11,591 +11,338 @@ public class SandboxPages {
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Nexus Sandbox — {{name}}</title>
+  <meta name="description" content="Nexus Sandbox — Plataforma profissional de gestão de projetos técnicos">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --bg-dark: #0a0b0d;
-      --bg-canvas: #121316;
-      --bg-node: rgba(26, 29, 36, 0.95);
-      --bg-node-hover: rgba(36, 40, 50, 0.98);
-      --text-main: #f3f4f6;
-      --text-muted: #9ca3af;
-      --border-color: rgba(255, 255, 255, 0.08);
-      
-      --color-folder: #3b82f6;
-      --color-code: #10b981;
-      --color-3d: #8b5cf6;
-      --color-pcb: #ec4899;
-      --color-note: #f59e0b;
-      --color-generic: #6b7280;
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      user-select: none;
-    }
-
-    body, html {
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      font-family: 'Outfit', sans-serif;
-      background-color: var(--bg-dark);
-      color: var(--text-main);
-    }
-
-    #app-container {
-      display: flex;
-      width: 100vw;
-      height: 100vh;
-      position: relative;
-    }
-
-    /* Sidebar Estilo Premium Glassmorphism */
-    #sidebar {
-      width: 320px;
-      height: 100%;
-      background: rgba(18, 19, 22, 0.85);
-      backdrop-filter: blur(16px);
-      border-right: 1px solid var(--border-color);
-      display: flex;
-      flex-direction: column;
-      z-index: 10;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    .sidebar-header {
-      padding: 24px;
-      border-bottom: 1px solid var(--border-color);
-    }
-
-    .project-title {
-      font-size: 20px;
-      font-weight: 600;
-      color: #fff;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .project-desc {
-      font-size: 13px;
-      color: var(--text-muted);
-      margin-top: 4px;
-    }
-
-    .sidebar-content {
-      flex: 1;
-      overflow-y: auto;
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-    }
-
-    .section-title {
-      font-size: 11px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--text-muted);
-      margin-bottom: 8px;
-    }
-
-    /* Botões Premium */
-    .btn {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      padding: 12px;
-      border-radius: 8px;
-      border: 1px solid var(--border-color);
-      background: rgba(255, 255, 255, 0.03);
-      color: #fff;
-      font-family: inherit;
-      font-size: 14px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .btn:hover {
-      background: rgba(255, 255, 255, 0.08);
-      border-color: rgba(255, 255, 255, 0.15);
-      transform: translateY(-1px);
-    }
-
-    .btn-primary {
-      background: linear-gradient(135deg, #3b82f6, #2563eb);
-      border: none;
-    }
-
-    .btn-primary:hover {
-      background: linear-gradient(135deg, #60a5fa, #3b82f6);
-      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
-    }
-
-    /* Lista de arquivos */
-    .file-list {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      max-height: 250px;
-      overflow-y: auto;
-    }
-
-    .file-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 10px;
-      background: rgba(255, 255, 255, 0.02);
-      border: 1px solid var(--border-color);
-      border-radius: 6px;
-      font-size: 13px;
-    }
-
-    .file-item-info {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    /* Área do Canvas */
-    #canvas-container {
-      flex: 1;
-      height: 100%;
-      position: relative;
-      background-color: var(--bg-canvas);
-      background-image: radial-gradient(rgba(255, 255, 255, 0.06) 1.5px, transparent 0);
-      background-size: 28px 28px;
-      overflow: hidden;
-      cursor: grab;
-    }
-
-    #canvas-container:active {
-      cursor: grabbing;
-    }
-
-    #canvas-viewport {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      transform-origin: 0 0;
-      pointer-events: none;
-    }
-
-    /* Nós do Canvas Blueprint */
-    .node {
-      position: absolute;
-      width: 240px;
-      background: var(--bg-node);
-      border: 1.5px solid rgba(255, 255, 255, 0.08);
-      border-radius: 12px;
-      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
-      pointer-events: auto;
-      display: flex;
-      flex-direction: column;
-      overflow: visible;
-      transition: border-color 0.2s, box-shadow 0.2s;
-    }
-
-    .node:hover {
-      border-color: rgba(255, 255, 255, 0.25);
-      background: var(--bg-node-hover);
-      box-shadow: 0 15px 30px -5px rgba(0, 0, 0, 0.7);
-    }
-
-    .node.selected {
-      border-color: #3b82f6 !important;
-      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.4), 0 15px 30px -5px rgba(0, 0, 0, 0.7);
-    }
-
-    .node-header {
-      padding: 12px 14px;
-      font-weight: 600;
-      font-size: 14px;
-      border-top-left-radius: 10px;
-      border-top-right-radius: 10px;
-      color: #fff;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-    }
-
-    .node-body {
-      padding: 14px;
-      font-size: 13px;
-      color: var(--text-muted);
-      line-height: 1.4;
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    /* Portas de Conexão Estilo Blueprint */
-    .port {
-      width: 12px;
-      height: 12px;
-      background-color: #121316;
-      border: 2px solid var(--text-muted);
-      border-radius: 50%;
-      position: absolute;
-      cursor: crosshair;
-      z-index: 10;
-      transition: background-color 0.2s, transform 0.2s;
-    }
-
-    .port:hover {
-      background-color: #3b82f6 !important;
-      transform: scale(1.3);
-      border-color: #fff;
-    }
-
-    .port.connected {
-      background-color: #3b82f6;
-      border-color: #fff;
-    }
-
-    .port-left { left: -7px; top: 50%; transform: translateY(-50%); }
-    .port-right { right: -7px; top: 50%; transform: translateY(-50%); }
-    .port-top { top: -7px; left: 50%; transform: translateX(-50%); }
-    .port-bottom { bottom: -7px; left: 50%; transform: translateX(-50%); }
-
-    /* SVG de Conexões */
-    #svg-connections {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      overflow: visible;
-      pointer-events: none;
-      z-index: 0;
-    }
-
-    .connection-line {
-      fill: none;
-      stroke: #64748b;
-      stroke-width: 2.5;
-      pointer-events: stroke;
-      cursor: pointer;
-      transition: stroke-width 0.15s, stroke 0.15s;
-    }
-
-    .connection-line:hover {
-      stroke-width: 4.5;
-      stroke: #3b82f6 !important;
-    }
-
-    .connection-line.active {
-      stroke: #3b82f6;
-      stroke-width: 3.5;
-    }
-
-    /* Controles Flutuantes do Canvas */
-    .floating-controls {
-      position: absolute;
-      bottom: 24px;
-      right: 24px;
-      display: flex;
-      gap: 10px;
-      z-index: 5;
-    }
-
-    .control-btn {
-      width: 44px;
-      height: 44px;
-      border-radius: 50%;
-      border: 1px solid var(--border-color);
-      background: rgba(18, 19, 22, 0.85);
-      backdrop-filter: blur(8px);
-      color: #fff;
-      font-size: 18px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-      transition: all 0.2s;
-    }
-
-    .control-btn:hover {
-      background: #2563eb;
-      border-color: #3b82f6;
-      transform: scale(1.05);
-    }
-
-    /* Modal de Preview de Arquivos */
-    #preview-modal {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background: rgba(0,0,0,0.85);
-      backdrop-filter: blur(12px);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 100;
-    }
-
-    .modal-content {
-      width: 80%;
-      height: 80%;
-      background: var(--bg-node);
-      border: 1px solid var(--border-color);
-      border-radius: 16px;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
-    }
-
-    .modal-header {
-      padding: 20px;
-      border-bottom: 1px solid var(--border-color);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .modal-body {
-      flex: 1;
-      padding: 20px;
-      overflow: auto;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: #0d0e12;
-    }
-
-    .close-modal {
-      font-size: 24px;
-      cursor: pointer;
-      color: var(--text-muted);
-    }
-
-    .close-modal:hover {
-      color: #fff;
-    }
-
-    /* Miniaturas dentro do nó */
-    .node-thumbnail {
-      width: 100%;
-      height: 90px;
-      background: #0d0e12;
-      border-radius: 6px;
-      border: 1px solid rgba(255,255,255,0.04);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 24px;
-      overflow: hidden;
-    }
-
-    .node-thumbnail img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    /* Tags */
-    .tag {
-      font-size: 11px;
-      font-weight: 500;
-      padding: 2px 6px;
-      border-radius: 4px;
-      background: rgba(255,255,255,0.08);
-      color: var(--text-muted);
-      width: fit-content;
-    }
-
-    /* Mock 3D PCB Viewers */
-    .mock-3d-canvas {
-      width: 100%;
-      height: 100%;
-      position: relative;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      color: var(--text-muted);
-    }
-
-    .rotate-3d {
-      animation: rotate3dAnimation 10s infinite linear;
-      font-size: 80px;
-      color: var(--color-3d);
-    }
-
-    @keyframes rotate3dAnimation {
-      from { transform: rotateY(0deg) rotateX(20deg); }
-      to { transform: rotateY(360deg) rotateX(20deg); }
-    }
-  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/vaultra.css">
+  <link rel="stylesheet" href="/css/canvas.css">
 </head>
 <body>
   <div id="app-container">
-    
-    <!-- Sidebar -->
+
+    <!-- ==================== SIDEBAR ==================== -->
     <div id="sidebar">
       <div class="sidebar-header">
-        <div class="project-title">
-          <span>{{icon}}</span>
-          <span>{{name}}</span>
+        <div class="sidebar-logo">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="#5b8def" stroke="#5b8def" stroke-width="1.5"/>
+            <path d="M2 17L12 22L22 17" stroke="#5b8def" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M2 12L12 17L22 12" stroke="#5b8def" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+          <span class="sidebar-logo-text"><span>Nexus</span> Sandbox</span>
         </div>
+        <div class="project-title">{{name}}</div>
         <div class="project-desc">{{desc}}</div>
       </div>
-      
-      <div class="sidebar-content">
-        <div>
-          <div class="section-title">Ações do Canvas</div>
-          <div style="display: flex; flex-direction: column; gap: 10px;">
-            <button class="btn btn-primary" onclick="criarNoNota()">
-              <span>📝</span> Adicionar Nota
-            </button>
-            <button class="btn" onclick="criarNoPasta()">
-              <span>📁</span> Adicionar Pasta
-            </button>
-            <button class="btn" onclick="resetarZoomPan()">
-              <span>🔍</span> Resetar Viewport
-            </button>
-            <a href="/workspace/dashboard" class="btn" style="text-decoration: none;">
-              <span>🏠</span> Menu Principal
-            </a>
-          </div>
-        </div>
 
-        <div>
-          <div class="section-title">Upload de Arquivos</div>
-          <div style="display: flex; flex-direction: column; gap: 10px;">
-            <p style="font-size: 12px; color: var(--text-muted);">
-              Arraste arquivos diretamente no canvas ou clique abaixo para fazer upload.
-            </p>
-            <input type="file" id="file-input" style="display: none;" onchange="handleFileUpload(event)">
-            <button class="btn" onclick="document.getElementById('file-input').click()">
-              <span>📤</span> Selecionar Arquivo
-            </button>
-          </div>
-        </div>
+      <div class="breadcrumbs" id="breadcrumbs">
+        <span class="breadcrumb-item active" data-id="null" onclick="navegarPasta(null)">Raiz</span>
+      </div>
 
-        <div>
-          <div class="section-title">Lista de Arquivos</div>
-          <div class="file-list" id="sidebar-file-list">
-            <!-- Injetado dinamicamente -->
-          </div>
+      <div class="sidebar-search">
+        <div class="search-input-wrapper">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <input class="search-input" type="text" placeholder="Buscar arquivos..." id="search-input" oninput="filtrarArquivos(this.value)">
         </div>
+      </div>
+
+      <div class="tree-actions">
+        <button class="tree-action-btn primary" onclick="criarNovaPasta()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+          Nova Pasta
+        </button>
+        <button class="tree-action-btn" onclick="document.getElementById('file-input').click()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Upload
+        </button>
+        <input type="file" id="file-input" multiple style="display:none;" onchange="handleFileUpload(event)">
+      </div>
+
+      <div class="sidebar-tree" id="file-tree">
+        <div class="tree-empty">Carregando...</div>
+      </div>
+
+      <div class="sidebar-footer">
+        <a href="/workspace/dashboard" class="sidebar-nav-btn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          Menu Principal
+        </a>
       </div>
     </div>
 
-    <!-- Área de Desenho (Canvas) -->
-    <div id="canvas-container" onmousedown="startPan(event)" onmousemove="dragCanvas(event)" onmouseup="endPan(event)" onmousewheel="handleZoom(event)">
+    <!-- ==================== CANVAS ==================== -->
+    <div id="canvas-container" onmousedown="startPan(event)" onmousemove="dragCanvas(event)" onmouseup="endPan(event)" onwheel="handleZoom(event)">
+      <!-- Floating Toolbar -->
+      <div class="toolbar" id="toolbar">
+        <button class="toolbar-btn" onclick="criarNoNota()" title="Adicionar Nota">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          Nota
+        </button>
+        <button class="toolbar-btn" onclick="criarNoPasta()" title="Adicionar Pasta no Canvas">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+          Pasta
+        </button>
+        <div class="toolbar-sep"></div>
+        <button class="toolbar-btn" onclick="ajustarZoom(0.15)" title="Zoom In">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/><path d="M11 8v6M8 11h6"/></svg>
+        </button>
+        <span class="toolbar-zoom" id="zoom-display">100%</span>
+        <button class="toolbar-btn" onclick="ajustarZoom(-0.15)" title="Zoom Out">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/><path d="M8 11h6"/></svg>
+        </button>
+        <div class="toolbar-sep"></div>
+        <button class="toolbar-btn" onclick="resetarZoomPan()" title="Resetar Viewport">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+        </button>
+        <button class="toolbar-btn" onclick="organizarAutomatico()" title="Auto Layout">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        </button>
+      </div>
+
+      <!-- Drop overlay for file drag -->
+      <div class="drop-overlay" id="drop-overlay">
+        <div class="drop-overlay-text">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:8px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Solte para enviar arquivos
+        </div>
+      </div>
+
       <div id="canvas-viewport">
-        <!-- SVG para desenhar as ligações Bezier -->
         <svg id="svg-connections">
           <g id="connections-group"></g>
-          <!-- Linha ativa de desenho de conexão -->
-          <path id="active-connection" fill="none" stroke="#3b82f6" stroke-width="3" stroke-dasharray="5,5" style="display: none;" />
+          <path id="active-connection" fill="none" stroke="#5b8def" stroke-width="2.5" stroke-dasharray="6,4" style="display:none;" />
         </svg>
-        
-        <div id="nodes-container">
-          <!-- Nós do canvas injetados dinamicamente -->
-        </div>
+        <div id="nodes-container"></div>
+      </div>
+
+      <!-- Minimap -->
+      <div class="minimap" id="minimap">
+        <div class="minimap-viewport" id="minimap-viewport"></div>
+      </div>
+
+      <!-- Upload progress -->
+      <div class="upload-progress" id="upload-progress">
+        <div class="upload-progress-title">Enviando arquivos...</div>
+        <div class="upload-progress-bar"><div class="upload-progress-fill" id="upload-progress-fill"></div></div>
+        <div class="upload-progress-text" id="upload-progress-text">0 / 0</div>
       </div>
     </div>
-
-    <!-- Controles Flutuantes -->
-    <div class="floating-controls">
-      <button class="control-btn" title="Aproximar" onclick="ajustarZoom(0.1)">＋</button>
-      <button class="control-btn" title="Afastar" onclick="ajustarZoom(-0.1)">－</button>
-      <button class="control-btn" title="Auto Layout" onclick="organizarAutomatico()">⚙</button>
-    </div>
-
   </div>
 
-  <!-- Modal de Visualização de Modelos -->
+  <!-- ==================== CONTEXT MENU ==================== -->
+  <div class="context-menu" id="context-menu">
+    <div class="context-menu-item" onclick="editarNomeNo()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      Editar Nome
+    </div>
+    <div class="context-menu-item" onclick="moverNoParaPasta()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+      Mover para Pasta
+    </div>
+    <div class="context-menu-sep"></div>
+    <div class="context-menu-item danger" onclick="removerNoContexto()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+      Deletar
+    </div>
+  </div>
+
+  <!-- ==================== PREVIEW MODAL ==================== -->
   <div id="preview-modal" onclick="fecharPreview()">
     <div class="modal-content" onclick="event.stopPropagation()">
       <div class="modal-header">
-        <h3 id="modal-title">Visualizar Modelo</h3>
-        <span class="close-modal" onclick="fecharPreview()">&times;</span>
+        <div class="modal-header-info">
+          <span id="modal-icon"></span>
+          <h3 id="modal-title">Visualizar</h3>
+        </div>
+        <button class="modal-close" onclick="fecharPreview()">&times;</button>
       </div>
-      <div class="modal-body" id="modal-body">
-        <!-- Conteúdo do visualizador -->
+      <div class="modal-body" id="modal-body"></div>
+      <div class="modal-footer">
+        <div class="modal-footer-info" id="modal-footer-info"></div>
+        <a class="modal-download-btn" id="modal-download" href="#" download>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download
+        </a>
       </div>
     </div>
   </div>
 
-  <!-- Lógica Principal do Canvas Blueprint -->
+  <!-- ==================== TOAST CONTAINER ==================== -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- ==================== Three.js CDN ==================== -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+
+  <!-- ==================== MAIN SCRIPT ==================== -->
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+    import { STLLoader } from 'three/addons/loaders/STLLoader.js';
+    import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
+
+    // Expose Three.js to global scope for viewer functions
+    window.THREE = THREE;
+    window.OrbitControls = OrbitControls;
+    window.GLTFLoader = GLTFLoader;
+    window.STLLoader = STLLoader;
+    window.OBJLoader = OBJLoader;
+  </script>
+
   <script>
+    // ==================== STATE ====================
     const PROJETO_ID = {{id}};
     let nos = [];
     let ligacoes = [];
+    let arquivosArvore = [];
+    let pastaAtualId = null;
+    let caminhoAtual = []; // [{id, nome}]
     let selecionadoNoId = null;
+    let contextMenuNoId = null;
+    let searchTerm = '';
 
-    // Estado do Viewport (Zoom e Pan)
+    // Viewport state
     let zoom = 1.0;
-    let panX = 100;
-    let panY = 100;
+    let panX = 100, panY = 100;
     let isPanning = false;
-    let startX = 0;
-    let startY = 0;
+    let startX = 0, startY = 0;
 
-    // Conexão em andamento
-    let activeConnectionStart = null; // { nodeId, portType, x, y }
+    // Connection state
+    let activeConnectionStart = null;
 
+    // Node drag state
+    let dragNode = null;
+    let nodeStartX = 0, nodeStartY = 0;
+    let mouseStartX = 0, mouseStartY = 0;
+
+    // Elements
     const container = document.getElementById('canvas-container');
     const viewport = document.getElementById('canvas-viewport');
     const nodesContainer = document.getElementById('nodes-container');
     const svgGroup = document.getElementById('connections-group');
     const activeLine = document.getElementById('active-connection');
 
-    // Inicialização
+    // ==================== SVG ICONS ====================
+    const ICONS = {
+      folder: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>',
+      file: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
+      cube3d: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>',
+      pcb: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 1v3M15 1v3M9 20v3M15 20v3M1 9h3M1 15h3M20 9h3M20 15h3"/><circle cx="9" cy="9" r="1"/><circle cx="15" cy="15" r="1"/></svg>',
+      autocad: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 20h20"/><path d="M5 20V8l7-5 7 5v12"/><path d="M10 20v-6h4v6"/></svg>',
+      image: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>',
+      note: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>',
+      chevron: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>',
+      delete: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>'
+    };
+
+    function getIconByType(tipo) {
+      switch(tipo) {
+        case '3d_model': return ICONS.cube3d;
+        case 'pcb_design': return ICONS.pcb;
+        case 'autocad': return ICONS.autocad;
+        case 'imagem': return ICONS.image;
+        case 'pasta': return ICONS.folder;
+        default: return ICONS.file;
+      }
+    }
+
+    function getColorByType(tipo) {
+      switch(tipo) {
+        case '3d_model': return 'var(--color-3d)';
+        case 'pcb_design': return 'var(--color-pcb)';
+        case 'autocad': return 'var(--color-autocad)';
+        case 'imagem': return 'var(--color-image)';
+        case 'pasta': return 'var(--color-folder)';
+        case 'nota': return 'var(--color-note)';
+        default: return 'var(--color-doc)';
+      }
+    }
+
+    // ==================== TOAST SYSTEM ====================
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      const iconSymbol = type === 'success' ? '✓' : type === 'error' ? '!' : type === 'warning' ? '⚠' : 'i';
+      toast.innerHTML = `
+        <div class="toast-icon">${iconSymbol}</div>
+        <span class="toast-message">${message}</span>
+        <button class="toast-close" onclick="this.parentElement.remove()">&times;</button>
+      `;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.classList.add('removing');
+        setTimeout(() => toast.remove(), 250);
+      }, 4000);
+    }
+
+    // ==================== INITIALIZATION ====================
     window.addEventListener('DOMContentLoaded', () => {
       carregarCanvas();
+      carregarArvore();
       atualizarViewport();
 
-      // Permitir drop de arquivos diretamente no canvas
-      container.addEventListener('dragover', (e) => e.preventDefault());
+      // File drop on canvas
+      container.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        document.getElementById('drop-overlay').classList.add('visible');
+      });
+      container.addEventListener('dragleave', (e) => {
+        if (!container.contains(e.relatedTarget)) {
+          document.getElementById('drop-overlay').classList.remove('visible');
+        }
+      });
       container.addEventListener('drop', handleFileDrop);
 
-      // Listener para atualizar a linha ativa ao criar conexões
+      // Connection drawing
       window.addEventListener('mousemove', drawActiveConnection);
       window.addEventListener('mouseup', cancelActiveConnection);
+
+      // Close context menu on click
+      window.addEventListener('click', () => {
+        document.getElementById('context-menu').classList.remove('visible');
+      });
+
+      // Keyboard shortcuts
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          fecharPreview();
+          document.getElementById('context-menu').classList.remove('visible');
+        }
+      });
     });
 
+    // ==================== VIEWPORT ====================
     function resetarZoomPan() {
-      zoom = 1.0;
-      panX = 100;
-      panY = 100;
+      zoom = 1.0; panX = 100; panY = 100;
       atualizarViewport();
     }
 
     function atualizarViewport() {
       viewport.style.transform = `translate(${panX}px, ${panY}px) scale(${zoom})`;
-      // Ajustar tamanho do grid de acordo com o zoom
       container.style.backgroundPosition = `${panX}px ${panY}px`;
+      document.getElementById('zoom-display').textContent = Math.round(zoom * 100) + '%';
+      atualizarMinimap();
     }
 
-    // --- CONTROLE DE ZOOM E PAN ---
-
     function startPan(e) {
-      if (e.target === container || e.target === viewport || e.target.tagName.toLowerCase() === 'svg') {
+      if (e.target === container || e.target === viewport || e.target.tagName === 'svg' || e.target.tagName === 'SVG') {
         isPanning = true;
         startX = e.clientX - panX;
         startY = e.clientY - panY;
+        // Deselect
+        selecionadoNoId = null;
+        document.querySelectorAll('.node').forEach(d => d.classList.remove('selected'));
       }
     }
 
@@ -607,77 +354,244 @@ public class SandboxPages {
       }
     }
 
-    function endPan() {
-      isPanning = false;
-    }
+    function endPan() { isPanning = false; }
 
     function handleZoom(e) {
       e.preventDefault();
-      const zoomFactor = 0.05;
-      const mouseX = e.clientX - container.offsetLeft;
-      const mouseY = e.clientY - container.offsetTop;
+      const factor = 0.08;
+      const rect = container.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+      const prevZoom = zoom;
 
-      const previousZoom = zoom;
-      if (e.deltaY < 0) {
-        zoom = Math.min(zoom + zoomFactor, 2.5);
-      } else {
-        zoom = Math.max(zoom - zoomFactor, 0.4);
-      }
+      zoom = e.deltaY < 0
+        ? Math.min(zoom + factor, 3)
+        : Math.max(zoom - factor, 0.3);
 
-      // Zoom em direção ao cursor do mouse
-      panX = mouseX - (mouseX - panX) * (zoom / previousZoom);
-      panY = mouseY - (mouseY - panY) * (zoom / previousZoom);
-
+      panX = mouseX - (mouseX - panX) * (zoom / prevZoom);
+      panY = mouseY - (mouseY - panY) * (zoom / prevZoom);
       atualizarViewport();
     }
 
-    function ajustarZoom(factor) {
-      zoom = Math.max(0.4, Math.min(2.5, zoom + factor));
+    function ajustarZoom(f) {
+      zoom = Math.max(0.3, Math.min(3, zoom + f));
       atualizarViewport();
     }
 
-    // --- CARREGAR DADOS ---
+    // ==================== MINIMAP ====================
+    function atualizarMinimap() {
+      const minimap = document.getElementById('minimap');
+      const mmViewport = document.getElementById('minimap-viewport');
+      if (nos.length === 0) { minimap.innerHTML = '<div class="minimap-viewport" id="minimap-viewport"></div>'; return; }
 
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      nos.forEach(n => {
+        minX = Math.min(minX, n.pos_x);
+        minY = Math.min(minY, n.pos_y);
+        maxX = Math.max(maxX, n.pos_x + (n.largura || 240));
+        maxY = Math.max(maxY, n.pos_y + (n.altura || 150));
+      });
+
+      const pad = 100;
+      minX -= pad; minY -= pad; maxX += pad; maxY += pad;
+      const worldW = maxX - minX;
+      const worldH = maxY - minY;
+      const mmW = 180, mmH = 120;
+      const scale = Math.min(mmW / worldW, mmH / worldH);
+
+      // Remove old nodes
+      minimap.querySelectorAll('.minimap-node').forEach(n => n.remove());
+
+      nos.forEach(n => {
+        const dot = document.createElement('div');
+        dot.className = 'minimap-node';
+        const tipo = n.tipo || 'arquivo';
+        const dados = n.dados_extra ? JSON.parse(n.dados_extra) : {};
+        let color = getColorByType(tipo === 'arquivo' ? (dados.tipo_arquivo || 'doc') : tipo);
+        dot.style.cssText = `left:${(n.pos_x - minX) * scale}px;top:${(n.pos_y - minY) * scale}px;width:${Math.max(4, (n.largura || 240) * scale)}px;height:${Math.max(3, (n.altura || 150) * scale)}px;background:${color};opacity:0.7;`;
+        minimap.appendChild(dot);
+      });
+
+      // Viewport rect
+      const rect = container.getBoundingClientRect();
+      const vpLeft = (-panX / zoom - minX) * scale;
+      const vpTop = (-panY / zoom - minY) * scale;
+      const vpW = (rect.width / zoom) * scale;
+      const vpH = (rect.height / zoom) * scale;
+      mmViewport.style.cssText = `left:${vpLeft}px;top:${vpTop}px;width:${vpW}px;height:${vpH}px;`;
+    }
+
+    // ==================== DATA LOADING ====================
     function carregarCanvas() {
       fetch(`/api/projetos/${PROJETO_ID}/canvas`)
-        .then(res => res.json())
+        .then(r => r.json())
         .then(data => {
           nos = data.nos || [];
           ligacoes = data.ligacoes || [];
           renderizarNos();
           renderizarLigacoes();
-          atualizarListaArquivosSidebar();
+          atualizarMinimap();
         })
         .catch(err => console.error("Erro ao carregar canvas:", err));
     }
 
-    function atualizarListaArquivosSidebar() {
-      fetch(`/api/projetos/${PROJETO_ID}/arquivos`)
-        .then(res => res.json())
-        .then(arquivos => {
-          const list = document.getElementById('sidebar-file-list');
-          list.innerHTML = '';
-          if (arquivos.length === 0) {
-            list.innerHTML = '<div style="color:var(--text-muted);font-size:12px;text-align:center;padding:10px;">Nenhum arquivo adicionado.</div>';
-            return;
-          }
-          arquivos.forEach(arq => {
-            const item = document.createElement('div');
-            item.className = 'file-item';
-            item.innerHTML = `
-              <div class="file-item-info">
-                <span>${obterIconePorTipo(arq.tipo_arquivo)}</span>
-                <span style="font-weight: 500;">${arq.nome}</span>
-              </div>
-              <button onclick="adicionarNoArquivoExistente(${arq.id}, '${arq.nome}', '${arq.tipo_arquivo}')" style="background:none;border:none;color:#3b82f6;cursor:pointer;font-weight:600;font-size:16px;" title="Adicionar ao canvas">＋</button>
-            `;
-            list.appendChild(item);
-          });
-        });
+    function carregarArvore() {
+      fetch(`/api/projetos/${PROJETO_ID}/arvore`)
+        .then(r => r.json())
+        .then(data => {
+          arquivosArvore = data.raiz || [];
+          renderizarArvore();
+        })
+        .catch(err => console.error("Erro ao carregar árvore:", err));
     }
 
-    // --- RENDERIZAR NÓS E CONEXÕES ---
+    // ==================== FILE TREE ====================
+    function renderizarArvore() {
+      const tree = document.getElementById('file-tree');
+      const items = obterItensAtuais();
 
+      if (items.length === 0) {
+        tree.innerHTML = '<div class="tree-empty">Nenhum arquivo nesta pasta.</div>';
+        return;
+      }
+
+      tree.innerHTML = '';
+      // Sort: folders first, then alphabetical
+      const sorted = [...items].sort((a, b) => {
+        if (a.eh_pasta && !b.eh_pasta) return -1;
+        if (!a.eh_pasta && b.eh_pasta) return 1;
+        return a.nome.localeCompare(b.nome);
+      });
+
+      sorted.forEach(item => {
+        if (searchTerm && !item.nome.toLowerCase().includes(searchTerm.toLowerCase())) return;
+        tree.appendChild(criarTreeItem(item));
+      });
+
+      atualizarBreadcrumbs();
+    }
+
+    function obterItensAtuais() {
+      if (pastaAtualId === null) return arquivosArvore;
+      // Find pasta in tree recursively
+      const pasta = encontrarPastaRecursiva(arquivosArvore, pastaAtualId);
+      return pasta ? (pasta.filhos || []) : [];
+    }
+
+    function encontrarPastaRecursiva(items, id) {
+      for (const item of items) {
+        if (item.id === id) return item;
+        if (item.eh_pasta && item.filhos) {
+          const found = encontrarPastaRecursiva(item.filhos, id);
+          if (found) return found;
+        }
+      }
+      return null;
+    }
+
+    function criarTreeItem(item) {
+      const div = document.createElement('div');
+
+      if (item.eh_pasta) {
+        const wrapper = document.createElement('div');
+        const row = document.createElement('div');
+        row.className = 'tree-item';
+        const childCount = (item.filhos || []).length;
+        row.innerHTML = `
+          <span class="tree-folder-toggle expanded" onclick="event.stopPropagation();toggleFolder(this)">${ICONS.chevron}</span>
+          <span class="tree-item-icon" style="color:var(--color-folder)">${ICONS.folder}</span>
+          <span class="tree-item-name">${item.nome}</span>
+          ${childCount > 0 ? `<span class="tree-item-count">${childCount}</span>` : ''}
+        `;
+        row.addEventListener('dblclick', () => navegarPasta(item.id, item.nome));
+
+        wrapper.appendChild(row);
+
+        if (item.filhos && item.filhos.length > 0) {
+          const children = document.createElement('div');
+          children.className = 'tree-children';
+          item.filhos.forEach(f => children.appendChild(criarTreeItem(f)));
+          wrapper.appendChild(children);
+        }
+
+        return wrapper;
+      } else {
+        div.className = 'tree-item';
+        const tipo = item.tipo_arquivo || 'documento';
+        div.innerHTML = `
+          <span class="tree-item-icon" style="color:${getColorByType(tipo)}">${getIconByType(tipo)}</span>
+          <span class="tree-item-name">${item.nome}</span>
+          <span class="tree-item-count">${formatBytes(item.tamanho_bytes || 0)}</span>
+        `;
+        div.addEventListener('dblclick', () => {
+          // Find corresponding node and open preview
+          const no = nos.find(n => n.arquivo_id === item.id || (n.dados_extra && JSON.parse(n.dados_extra).caminho === item.caminho));
+          if (no) abrirPreviewNode(no);
+        });
+      }
+
+      return div;
+    }
+
+    function toggleFolder(el) {
+      el.classList.toggle('expanded');
+      const children = el.closest('.tree-item').nextElementSibling;
+      if (children && children.classList.contains('tree-children')) {
+        children.classList.toggle('collapsed');
+      }
+    }
+
+    function navegarPasta(id, nome) {
+      if (id === null) {
+        pastaAtualId = null;
+        caminhoAtual = [];
+      } else {
+        pastaAtualId = id;
+        // Build path
+        const idx = caminhoAtual.findIndex(c => c.id === id);
+        if (idx >= 0) {
+          caminhoAtual = caminhoAtual.slice(0, idx + 1);
+        } else {
+          caminhoAtual.push({ id, nome });
+        }
+      }
+      renderizarArvore();
+    }
+
+    function atualizarBreadcrumbs() {
+      const bc = document.getElementById('breadcrumbs');
+      bc.innerHTML = `<span class="breadcrumb-item ${pastaAtualId === null ? 'active' : ''}" onclick="navegarPasta(null)">Raiz</span>`;
+      caminhoAtual.forEach((item, i) => {
+        bc.innerHTML += `<span class="breadcrumb-sep">›</span>`;
+        const isLast = i === caminhoAtual.length - 1;
+        bc.innerHTML += `<span class="breadcrumb-item ${isLast ? 'active' : ''}" onclick="navegarPasta(${item.id}, '${item.nome}')">${item.nome}</span>`;
+      });
+    }
+
+    function filtrarArquivos(term) {
+      searchTerm = term;
+      renderizarArvore();
+    }
+
+    function criarNovaPasta() {
+      const nome = prompt("Nome da nova pasta:", "Nova Pasta");
+      if (!nome || !nome.trim()) return;
+
+      fetch(`/api/projetos/${PROJETO_ID}/pastas`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nome: nome.trim(), pasta_pai_id: pastaAtualId })
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.status === 'success') {
+          showToast(`Pasta "${nome}" criada com sucesso.`, 'success');
+          carregarArvore();
+        }
+      });
+    }
+
+    // ==================== RENDER NODES ====================
     function renderizarNos() {
       nodesContainer.innerHTML = '';
       nos.forEach(no => {
@@ -685,62 +599,49 @@ public class SandboxPages {
         div.className = `node ${selecionadoNoId === no.id ? 'selected' : ''}`;
         div.style.left = `${no.pos_x}px`;
         div.style.top = `${no.pos_y}px`;
-        div.style.width = `${no.largura}px`;
-        div.style.height = `${no.altura}px`;
+        div.style.width = `${no.largura || 240}px`;
         div.id = `node-${no.id}`;
 
-        // Definir cor de borda e header de acordo com tipo
-        let headerColor = 'var(--color-generic)';
-        if (no.tipo === 'pasta') headerColor = 'var(--color-folder)';
-        else if (no.tipo === 'nota') headerColor = 'var(--color-note)';
-        else if (no.tipo === 'arquivo') {
-          const dados = no.dados_extra ? JSON.parse(no.dados_extra) : {};
-          const tipoArq = dados.tipo_arquivo;
-          if (tipoArq === '3d_model') headerColor = 'var(--color-3d)';
-          else if (tipoArq === 'pcb_design') headerColor = 'var(--color-pcb)';
-          else if (tipoArq === 'autocad') headerColor = 'var(--color-3d)';
-          else if (tipoArq === 'imagem') headerColor = 'var(--color-code)';
-        }
+        const dados = no.dados_extra ? JSON.parse(no.dados_extra) : {};
+        let tipo = no.tipo;
+        let tipoArq = tipo === 'arquivo' ? (dados.tipo_arquivo || 'documento') : tipo;
+        let headerColor = getColorByType(tipoArq);
+        let icon = tipo === 'nota' ? ICONS.note : tipo === 'pasta' ? ICONS.folder : getIconByType(tipoArq);
 
-        // Criar conteúdo interno do nó
-        let internalContent = `<p>${no.dados_extra ? (JSON.parse(no.dados_extra).descricao || "") : ""}</p>`;
-        
-        // Thumbnail/Preview para arquivo
-        if (no.tipo === 'arquivo') {
-          const dados = no.dados_extra ? JSON.parse(no.dados_extra) : {};
-          const ext = no.titulo.split('.').pop().toLowerCase();
-          const eImagem = ['png', 'jpg', 'jpeg', 'gif', 'svg'].includes(ext);
-
-          internalContent = `
+        let bodyContent = '';
+        if (tipo === 'arquivo') {
+          const ext = no.titulo ? no.titulo.split('.').pop().toLowerCase() : '';
+          const isImage = ['png','jpg','jpeg','gif','svg','webp'].includes(ext);
+          bodyContent = `
             <div class="node-thumbnail">
-              ${eImagem ? `<img src="${dados.caminho}">` : `<span>${obterIconePorTipo(dados.tipo_arquivo)}</span>`}
+              ${isImage && dados.caminho ? `<img src="${dados.caminho}" loading="lazy">` : `<span style="color:${headerColor};opacity:0.5">${getIconByType(tipoArq).replace('width="16"','width="28"').replace('height="16"','height="28"')}</span>`}
             </div>
-            <div style="font-size: 11px; display: flex; justify-content: space-between; align-items:center;">
-              <span class="tag">${ext.toUpperCase()}</span>
+            <div class="node-meta">
+              <span class="node-tag">${ext.toUpperCase()}</span>
               <span>${formatBytes(dados.tamanho || 0)}</span>
             </div>
           `;
+        } else if (tipo === 'nota') {
+          bodyContent = `<p style="font-style:italic;color:var(--text-muted);">${dados.descricao || 'Nota vazia'}</p>`;
+        } else if (tipo === 'pasta') {
+          bodyContent = `<p style="color:var(--text-muted);">Pasta de organização</p>`;
         }
 
         div.innerHTML = `
-          <div class="node-header" style="background-color: ${headerColor}">
-            <span>${no.tipo === 'pasta' ? '📁' : no.tipo === 'nota' ? '📝' : '📄'} ${no.titulo}</span>
-            <span onclick="removerNo(${no.id})" style="cursor:pointer;font-size:12px;opacity:0.7;" title="Deletar">❌</span>
+          <div class="node-header" style="background:${headerColor}">
+            <span class="node-header-title">${icon} ${no.titulo || 'Sem título'}</span>
+            <span class="node-delete" onclick="event.stopPropagation();removerNo(${no.id})">${ICONS.delete}</span>
           </div>
-          <div class="node-body">
-            ${internalContent}
-          </div>
-          
-          <!-- Portas de ligação -->
+          <div class="node-body">${bodyContent}</div>
           <div class="port port-left" data-node-id="${no.id}" data-port="left" onmousedown="startConnecting(event, ${no.id}, 'left')"></div>
           <div class="port port-right" data-node-id="${no.id}" data-port="right" onmousedown="startConnecting(event, ${no.id}, 'right')"></div>
           <div class="port port-top" data-node-id="${no.id}" data-port="top" onmousedown="startConnecting(event, ${no.id}, 'top')"></div>
           <div class="port port-bottom" data-node-id="${no.id}" data-port="bottom" onmousedown="startConnecting(event, ${no.id}, 'bottom')"></div>
         `;
 
-        // Habilitar drag do nó
         div.addEventListener('mousedown', (e) => startDragNode(e, no));
         div.addEventListener('dblclick', () => abrirPreviewNode(no));
+        div.addEventListener('contextmenu', (e) => { e.preventDefault(); mostrarContextMenu(e, no.id); });
 
         nodesContainer.appendChild(div);
       });
@@ -753,85 +654,55 @@ public class SandboxPages {
         path.className.baseVal = 'connection-line';
         path.id = `connection-${lig.id}`;
 
-        // Buscar posições dos nós de origem e destino
         const nOrigem = nos.find(n => n.id === lig.origem_id);
         const nDestino = nos.find(n => n.id === lig.destino_id);
 
         if (nOrigem && nDestino) {
-          const ptOrigem = obterCoordenadaPorta(nOrigem, lig.porta_origem);
-          const ptDestino = obterCoordenadaPorta(nDestino, lig.porta_destino);
-          const d = calcularBezier(ptOrigem.x, ptOrigem.y, ptDestino.x, ptDestino.y, lig.porta_origem, lig.porta_destino);
-          path.setAttribute('d', d);
-          
-          // Definir cores por relação
-          let cor = '#64748b'; // default
-          if (lig.tipo === 'dependencia') cor = '#10b981';
-          else if (lig.tipo === 'fluxo') cor = '#f59e0b';
+          const ptO = obterCoordenadaPorta(nOrigem, lig.porta_origem);
+          const ptD = obterCoordenadaPorta(nDestino, lig.porta_destino);
+          path.setAttribute('d', calcularBezier(ptO.x, ptO.y, ptD.x, ptD.y, lig.porta_origem, lig.porta_destino));
+
+          let cor = '#475569';
+          if (lig.tipo === 'dependencia') cor = 'var(--color-code)';
+          else if (lig.tipo === 'fluxo') cor = 'var(--color-note)';
           path.setAttribute('stroke', cor);
 
-          // Remover ligação com clique com botão direito
-          path.addEventListener('contextmenu', (e) => {
-            e.preventDefault();
-            removerLigacao(lig.id);
-          });
-
+          path.addEventListener('contextmenu', (e) => { e.preventDefault(); removerLigacao(lig.id); });
           svgGroup.appendChild(path);
         }
       });
     }
 
-    // --- ARRASTAR E MOVER NÓS ---
-
-    let dragNode = null;
-    let nodeStartX = 0;
-    let nodeStartY = 0;
-    let mouseStartX = 0;
-    let mouseStartY = 0;
-
+    // ==================== NODE DRAG ====================
     function startDragNode(e, no) {
-      if (e.target.classList.contains('port') || e.target.innerText === '❌') return;
-      
+      if (e.target.classList.contains('port') || e.target.closest('.node-delete')) return;
       e.stopPropagation();
       dragNode = no;
       selecionadoNoId = no.id;
-      
-      // Destacar selecionado
-      document.querySelectorAll('.node').forEach(div => div.classList.remove('selected'));
-      document.getElementById(`node-${no.id}`).classList.add('selected');
+      document.querySelectorAll('.node').forEach(d => d.classList.remove('selected'));
+      document.getElementById(`node-${no.id}`)?.classList.add('selected');
 
-      mouseStartX = e.clientX;
-      mouseStartY = e.clientY;
-      nodeStartX = no.pos_x;
-      nodeStartY = no.pos_y;
+      mouseStartX = e.clientX; mouseStartY = e.clientY;
+      nodeStartX = no.pos_x; nodeStartY = no.pos_y;
 
-      const moveHandler = (evt) => {
-        if (dragNode) {
-          const dx = (evt.clientX - mouseStartX) / zoom;
-          const dy = (evt.clientY - mouseStartY) / zoom;
-          dragNode.pos_x = nodeStartX + dx;
-          dragNode.pos_y = nodeStartY + dy;
-          
-          const div = document.getElementById(`node-${dragNode.id}`);
-          div.style.left = `${dragNode.pos_x}px`;
-          div.style.top = `${dragNode.pos_y}px`;
-
-          // Redesenhar conexões ligadas a este nó
-          renderizarLigacoes();
-        }
+      const moveH = (evt) => {
+        if (!dragNode) return;
+        dragNode.pos_x = nodeStartX + (evt.clientX - mouseStartX) / zoom;
+        dragNode.pos_y = nodeStartY + (evt.clientY - mouseStartY) / zoom;
+        const div = document.getElementById(`node-${dragNode.id}`);
+        if (div) { div.style.left = `${dragNode.pos_x}px`; div.style.top = `${dragNode.pos_y}px`; }
+        renderizarLigacoes();
       };
 
-      const upHandler = () => {
-        if (dragNode) {
-          // Persistir no banco de dados a nova posição do nó
-          salvarPosicaoNo(dragNode);
-          dragNode = null;
-        }
-        window.removeEventListener('mousemove', moveHandler);
-        window.removeEventListener('mouseup', upHandler);
+      const upH = () => {
+        if (dragNode) { salvarPosicaoNo(dragNode); dragNode = null; }
+        window.removeEventListener('mousemove', moveH);
+        window.removeEventListener('mouseup', upH);
+        atualizarMinimap();
       };
 
-      window.addEventListener('mousemove', moveHandler);
-      window.addEventListener('mouseup', upHandler);
+      window.addEventListener('mousemove', moveH);
+      window.addEventListener('mouseup', upH);
     }
 
     function salvarPosicaoNo(no) {
@@ -842,342 +713,528 @@ public class SandboxPages {
       });
     }
 
-    // --- CRIAR NÓS ---
+    // ==================== CREATE NODES ====================
+    function obterCentroViewport() {
+      const rect = container.getBoundingClientRect();
+      return { x: (rect.width / 2 - panX) / zoom, y: (rect.height / 2 - panY) / zoom };
+    }
 
     function criarNoNota() {
       const titulo = prompt("Título da Nota:", "Nova Nota");
       if (!titulo) return;
-      
       const pos = obterCentroViewport();
-      
       fetch(`/api/projetos/${PROJETO_ID}/nos`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          tipo: 'nota',
-          titulo: titulo,
-          pos_x: pos.x,
-          pos_y: pos.y
-        })
-      })
-      .then(res => res.json())
-      .then(() => carregarCanvas());
+        body: JSON.stringify({ tipo: 'nota', titulo, pos_x: pos.x, pos_y: pos.y })
+      }).then(r => r.json()).then(() => { carregarCanvas(); showToast('Nota criada.', 'success'); });
     }
 
     function criarNoPasta() {
       const titulo = prompt("Nome da Pasta:", "Nova Pasta");
       if (!titulo) return;
-
       const pos = obterCentroViewport();
-
       fetch(`/api/projetos/${PROJETO_ID}/nos`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          tipo: 'pasta',
-          titulo: titulo,
-          pos_x: pos.x,
-          pos_y: pos.y
-        })
-      })
-      .then(res => res.json())
-      .then(() => carregarCanvas());
-    }
-
-    function adicionarNoArquivoExistente(arqId, nome, tipoArq) {
-      const pos = obterCentroViewport();
-
-      fetch(`/api/projetos/${PROJETO_ID}/nos`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          tipo: 'arquivo',
-          titulo: nome,
-          pos_x: pos.x,
-          pos_y: pos.y,
-          arquivo_id: arqId
-        })
-      })
-      .then(res => res.json())
-      .then(() => carregarCanvas());
+        body: JSON.stringify({ tipo: 'pasta', titulo, pos_x: pos.x, pos_y: pos.y })
+      }).then(r => r.json()).then(() => { carregarCanvas(); showToast('Pasta criada no canvas.', 'success'); });
     }
 
     function removerNo(id) {
-      if (confirm("Remover este bloco?")) {
-        fetch(`/api/projetos/${PROJETO_ID}/nos/${id}`, { method: 'DELETE' })
-          .then(() => carregarCanvas());
-      }
+      if (!confirm("Remover este bloco do canvas?")) return;
+      fetch(`/api/projetos/${PROJETO_ID}/nos/${id}`, { method: 'DELETE' })
+        .then(() => { carregarCanvas(); showToast('Bloco removido.', 'info'); });
     }
 
-    // --- CRIAR LIGAÇÕES (CONEXÕES) ---
-
+    // ==================== CONNECTIONS ====================
     function startConnecting(e, nodeId, port) {
-      e.stopPropagation();
-      e.preventDefault();
-      
+      e.stopPropagation(); e.preventDefault();
       const no = nos.find(n => n.id === nodeId);
       const coord = obterCoordenadaPorta(no, port);
       activeConnectionStart = { nodeId, port, ...coord };
-
       activeLine.style.display = 'block';
-      drawActiveConnection(e);
     }
 
     function drawActiveConnection(e) {
       if (!activeConnectionStart) return;
-
       const rect = container.getBoundingClientRect();
-      const mouseX = (e.clientX - rect.left - panX) / zoom;
-      const mouseY = (e.clientY - rect.top - panY) / zoom;
-
-      const d = calcularBezier(activeConnectionStart.x, activeConnectionStart.y, mouseX, mouseY, activeConnectionStart.port, 'left');
-      activeLine.setAttribute('d', d);
+      const mx = (e.clientX - rect.left - panX) / zoom;
+      const my = (e.clientY - rect.top - panY) / zoom;
+      activeLine.setAttribute('d', calcularBezier(activeConnectionStart.x, activeConnectionStart.y, mx, my, activeConnectionStart.port, 'left'));
     }
 
     function cancelActiveConnection(e) {
       if (!activeConnectionStart) return;
-
-      // Verificar se soltou o mouse sobre outra porta
       const target = e.target;
       if (target.classList.contains('port')) {
         const destNodeId = parseInt(target.getAttribute('data-node-id'));
         const destPort = target.getAttribute('data-port');
-
         if (destNodeId !== activeConnectionStart.nodeId) {
           criarLigacao(activeConnectionStart.nodeId, activeConnectionStart.port, destNodeId, destPort);
         }
       }
-
       activeConnectionStart = null;
       activeLine.style.display = 'none';
     }
 
     function criarLigacao(origemId, portaOrigem, destinoId, portaDestino) {
-      // Tipo padrão
-      const tipo = prompt("Tipo de Ligação (dependencia / referencia / fluxo):", "referencia");
-      if (tipo === null) return; // Cancelado
-
+      const tipo = prompt("Tipo (dependencia / referencia / fluxo):", "referencia");
+      if (tipo === null) return;
       fetch(`/api/projetos/${PROJETO_ID}/ligacoes`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          origem_id: origemId,
-          destino_id: destinoId,
-          porta_origem: portaOrigem,
-          porta_destino: portaDestino,
-          tipo: tipo
-        })
-      })
-      .then(res => res.json())
-      .then(() => carregarCanvas());
+        body: JSON.stringify({ origem_id: origemId, destino_id: destinoId, porta_origem: portaOrigem, porta_destino: portaDestino, tipo })
+      }).then(r => r.json()).then(() => { carregarCanvas(); showToast('Conexão criada.', 'success'); });
     }
 
     function removerLigacao(id) {
-      if (confirm("Remover esta conexão?")) {
-        fetch(`/api/projetos/${PROJETO_ID}/ligacoes/${id}`, { method: 'DELETE' })
-          .then(() => carregarCanvas());
-      }
+      if (!confirm("Remover esta conexão?")) return;
+      fetch(`/api/projetos/${PROJETO_ID}/ligacoes/${id}`, { method: 'DELETE' })
+        .then(() => { carregarCanvas(); showToast('Conexão removida.', 'info'); });
     }
 
-    // --- UPLOAD DE ARQUIVOS ---
+    // ==================== CONTEXT MENU ====================
+    function mostrarContextMenu(e, nodeId) {
+      contextMenuNoId = nodeId;
+      const menu = document.getElementById('context-menu');
+      menu.style.left = e.clientX + 'px';
+      menu.style.top = e.clientY + 'px';
+      menu.classList.add('visible');
+    }
 
+    function editarNomeNo() {
+      const no = nos.find(n => n.id === contextMenuNoId);
+      if (!no) return;
+      const novoTitulo = prompt("Novo título:", no.titulo);
+      if (!novoTitulo) return;
+      fetch(`/api/projetos/${PROJETO_ID}/nos/${no.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ titulo: novoTitulo })
+      }).then(() => { carregarCanvas(); showToast('Nome atualizado.', 'success'); });
+    }
+
+    function moverNoParaPasta() {
+      showToast('Use drag & drop na sidebar para mover arquivos.', 'info');
+    }
+
+    function removerNoContexto() {
+      if (contextMenuNoId) removerNo(contextMenuNoId);
+    }
+
+    // ==================== UPLOAD ====================
     function handleFileUpload(e) {
-      const file = e.target.files[0];
-      if (file) {
-        uploadFile(file);
-      }
+      const files = Array.from(e.target.files);
+      if (files.length > 0) uploadFiles(files);
+      e.target.value = '';
     }
 
     function handleFileDrop(e) {
       e.preventDefault();
-      const files = e.dataTransfer.files;
-      if (files.length > 0) {
-        uploadFile(files[0]);
-      }
+      document.getElementById('drop-overlay').classList.remove('visible');
+      const files = Array.from(e.dataTransfer.files);
+      if (files.length > 0) uploadFiles(files);
     }
 
-    function uploadFile(file) {
-      const reader = new FileReader();
-      reader.onload = function(evt) {
-        const base64Content = evt.target.result.split(',')[1];
-        
-        // Identificar tipo do arquivo
-        let tipo = 'documento';
-        const ext = file.name.split('.').pop().toLowerCase();
-        if (['obj', 'stl', 'fbx', 'gltf', 'glb'].includes(ext)) tipo = '3d_model';
-        else if (['pcb', 'brd', 'sch', 'kicad_pcb'].includes(ext)) tipo = 'pcb_design';
-        else if (['dwg', 'dxf'].includes(ext)) tipo = 'autocad';
-        else if (['png', 'jpg', 'jpeg', 'gif', 'svg'].includes(ext)) tipo = 'imagem';
+    async function uploadFiles(files) {
+      const progressEl = document.getElementById('upload-progress');
+      const fillEl = document.getElementById('upload-progress-fill');
+      const textEl = document.getElementById('upload-progress-text');
+      progressEl.classList.add('visible');
 
-        fetch(`/api/projetos/${PROJETO_ID}/upload`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            name: file.name,
-            content: base64Content,
-            type: tipo
-          })
-        })
-        .then(res => res.json())
-        .then(data => {
+      let done = 0;
+      for (const file of files) {
+        textEl.textContent = `${done + 1} / ${files.length} — ${file.name}`;
+        fillEl.style.width = `${(done / files.length) * 100}%`;
+
+        try {
+          const base64 = await readFileAsBase64(file);
+          let tipo = 'documento';
+          const ext = file.name.split('.').pop().toLowerCase();
+          if (['obj','stl','fbx','gltf','glb'].includes(ext)) tipo = '3d_model';
+          else if (['pcb','brd','sch','kicad_pcb'].includes(ext)) tipo = 'pcb_design';
+          else if (['dwg','dxf'].includes(ext)) tipo = 'autocad';
+          else if (['png','jpg','jpeg','gif','svg','webp'].includes(ext)) tipo = 'imagem';
+
+          const body = { name: file.name, content: base64, type: tipo };
+          if (pastaAtualId) body.pasta_id = pastaAtualId;
+
+          const res = await fetch(`/api/projetos/${PROJETO_ID}/upload`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+          });
+          const data = await res.json();
           if (data.status === 'success') {
-            carregarCanvas();
+            showToast(`"${file.name}" enviado com sucesso.`, 'success');
           } else {
-            alert("Erro no upload: " + data.message);
+            showToast(`Erro ao enviar "${file.name}".`, 'error');
           }
-        })
-        .catch(err => {
-          console.error("Erro no upload:", err);
-          alert("Erro no upload.");
-        });
-      };
-      reader.readAsDataURL(file);
+        } catch(err) {
+          showToast(`Erro ao enviar "${file.name}".`, 'error');
+        }
+        done++;
+        fillEl.style.width = `${(done / files.length) * 100}%`;
+      }
+
+      textEl.textContent = `${done} / ${files.length} concluído`;
+      setTimeout(() => progressEl.classList.remove('visible'), 2000);
+      carregarCanvas();
+      carregarArvore();
     }
 
-    // --- VISUALIZAÇÃO/PREVIEW DE ARQUIVOS (3D, PCB, AutoCAD) ---
+    function readFileAsBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result.split(',')[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    // ==================== PREVIEW MODAL ====================
+    function fecharPreview() {
+      const modal = document.getElementById('preview-modal');
+      modal.style.display = 'none';
+      // Clean up any Three.js renderers
+      const body = document.getElementById('modal-body');
+      body.innerHTML = '';
+    }
 
     function abrirPreviewNode(no) {
       if (no.tipo !== 'arquivo') return;
-
       const dados = no.dados_extra ? JSON.parse(no.dados_extra) : {};
       const modal = document.getElementById('preview-modal');
       const title = document.getElementById('modal-title');
+      const iconEl = document.getElementById('modal-icon');
       const body = document.getElementById('modal-body');
+      const footerInfo = document.getElementById('modal-footer-info');
+      const downloadBtn = document.getElementById('modal-download');
 
-      title.innerText = no.titulo;
+      const tipo = dados.tipo_arquivo || 'documento';
+      const ext = no.titulo ? no.titulo.split('.').pop().toLowerCase() : '';
+
+      title.textContent = no.titulo;
+      iconEl.innerHTML = getIconByType(tipo);
       body.innerHTML = '';
 
-      const tipo = dados.tipo_arquivo;
-      const ext = no.titulo.split('.').pop().toLowerCase();
+      // Footer info
+      footerInfo.innerHTML = `
+        <span>${no.titulo}</span>
+        <span>${formatBytes(dados.tamanho || 0)}</span>
+        <span>${ext.toUpperCase()}</span>
+      `;
 
-      if (tipo === '3d_model') {
-        body.innerHTML = `
-          <div class="mock-3d-canvas">
-            <span class="rotate-3d">⚙</span>
-            <h2 style="margin-top:20px;">Visualizador de Modelo 3D — NexusEngine</h2>
-            <p style="color:var(--text-muted); margin-top:8px;">Renderizando modelo: <b>${no.titulo}</b> (${ext.toUpperCase()})</p>
-            <p style="font-size:12px; margin-top:6px; color:#10b981;">✔ WebGL 2.0 ativo. Aceleração por Hardware OK.</p>
-          </div>
-        `;
-      } else if (tipo === 'pcb_design') {
-        body.innerHTML = `
-          <div class="mock-3d-canvas">
-            <div class="rotate-3d" style="color:var(--color-pcb); animation-duration: 5s;">🔌</div>
-            <h2 style="margin-top:20px;">Análise Integrada de Placas-Mãe & PCBs</h2>
-            <p style="color:var(--text-muted); margin-top:8px;">Layout carregado: <b>${no.titulo}</b></p>
-            <p style="font-size:12px; margin-top:6px; color:#10b981;">✔ Trilhas e componentes OK. Pronta para produção.</p>
-          </div>
-        `;
-      } else if (tipo === 'autocad') {
-        body.innerHTML = `
-          <div class="mock-3d-canvas">
-            <div class="rotate-3d" style="color:#f59e0b; animation-duration: 7s;">📐</div>
-            <h2 style="margin-top:20px;">Visualizador AutoCAD (Desenho Vetorial)</h2>
-            <p style="color:var(--text-muted); margin-top:8px;">Projeto CAD: <b>${no.titulo}</b></p>
-            <p style="font-size:12px; margin-top:6px; color:#10b981;">✔ Camadas vetoriais renderizadas com sucesso.</p>
-          </div>
-        `;
-      } else if (tipo === 'imagem') {
-        body.innerHTML = `<img src="${dados.caminho}" style="max-width:100%; max-height:100%; object-fit:contain; border-radius:8px;">`;
+      if (dados.caminho) {
+        downloadBtn.href = dados.caminho;
+        downloadBtn.style.display = 'flex';
       } else {
-        // Arquivos comuns
-        body.innerHTML = `
-          <div style="text-align:center;">
-            <div style="font-size:64px;">📄</div>
-            <h2 style="margin-top:16px;">${no.titulo}</h2>
-            <p style="color:var(--text-muted); margin-top:8px;">Tamanho: ${formatBytes(dados.tamanho || 0)}</p>
-            <a href="${dados.caminho}" download class="btn" style="margin-top:20px; display:inline-flex;">📥 Baixar Arquivo</a>
-          </div>
-        `;
+        downloadBtn.style.display = 'none';
+      }
+
+      if (tipo === '3d_model' && dados.caminho) {
+        renderizar3D(body, dados.caminho, ext, dados.tamanho || 0);
+      } else if (tipo === 'imagem' && dados.caminho) {
+        renderizarImagem(body, dados.caminho, no.titulo);
+      } else if (tipo === 'pcb_design') {
+        renderizarMetadados(body, no.titulo, ext, dados.tamanho || 0, 'pcb');
+      } else if (tipo === 'autocad') {
+        renderizarMetadados(body, no.titulo, ext, dados.tamanho || 0, 'autocad');
+      } else {
+        renderizarMetadados(body, no.titulo, ext, dados.tamanho || 0, 'generic');
       }
 
       modal.style.display = 'flex';
     }
 
-    // --- ALGORITMOS DE LAYOUT E CÁLCULO ---
+    // ==================== 3D VIEWER (Three.js) ====================
+    function renderizar3D(container, caminho, ext, tamanho) {
+      const canvas3d = document.createElement('canvas');
+      canvas3d.style.cssText = 'width:100%;height:100%;display:block;';
+      container.appendChild(canvas3d);
 
-    function obterCentroViewport() {
-      const rect = container.getBoundingClientRect();
-      const x = (rect.width / 2 - panX) / zoom;
-      const y = (rect.height / 2 - panY) / zoom;
-      return { x, y };
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x060810);
+
+      const camera = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.1, 2000);
+      camera.position.set(3, 2, 3);
+
+      const renderer = new THREE.WebGLRenderer({ canvas: canvas3d, antialias: true });
+      renderer.setSize(container.clientWidth, container.clientHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+
+      const controls = new OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.08;
+
+      // Lighting
+      scene.add(new THREE.AmbientLight(0xcccccc, 0.6));
+      const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
+      dirLight.position.set(5, 10, 7);
+      scene.add(dirLight);
+
+      // Grid
+      const grid = new THREE.GridHelper(20, 20, 0x1a1f30, 0x111525);
+      scene.add(grid);
+
+      // Info panel
+      const infoPanel = document.createElement('div');
+      infoPanel.className = 'viewer-3d-info';
+      infoPanel.innerHTML = `<span>Carregando modelo...</span>`;
+      container.appendChild(infoPanel);
+
+      // Controls bar
+      const controlsBar = document.createElement('div');
+      controlsBar.className = 'viewer-3d-controls';
+      let wireframeMode = false;
+      let gridVisible = true;
+      controlsBar.innerHTML = `
+        <button class="viewer-3d-btn" onclick="this.closest('.modal-body').querySelector('canvas').__resetCam?.()">Reset Camera</button>
+        <button class="viewer-3d-btn" onclick="this.closest('.modal-body').querySelector('canvas').__toggleWire?.()">Wireframe</button>
+        <button class="viewer-3d-btn" onclick="this.closest('.modal-body').querySelector('canvas').__toggleGrid?.()">Grid</button>
+      `;
+      container.appendChild(controlsBar);
+
+      // Load model
+      function onModelLoaded(object) {
+        const box = new THREE.Box3().setFromObject(object);
+        const size = new THREE.Vector3();
+        box.getSize(size);
+        const center = new THREE.Vector3();
+        box.getCenter(center);
+
+        object.position.sub(center);
+        const maxDim = Math.max(size.x, size.y, size.z);
+        const scale = 3 / maxDim;
+        object.scale.multiplyScalar(scale);
+
+        scene.add(object);
+
+        camera.position.set(size.x * scale * 1.2, size.y * scale * 1.2, size.z * scale * 1.5);
+        controls.target.set(0, 0, 0);
+        controls.update();
+
+        // Count geometry info
+        let vertices = 0, faces = 0;
+        object.traverse(child => {
+          if (child.isMesh && child.geometry) {
+            const geo = child.geometry;
+            vertices += geo.attributes.position ? geo.attributes.position.count : 0;
+            faces += geo.index ? geo.index.count / 3 : (geo.attributes.position ? geo.attributes.position.count / 3 : 0);
+          }
+        });
+
+        infoPanel.innerHTML = `
+          <span>Vértices <strong>${vertices.toLocaleString()}</strong></span>
+          <span>Faces <strong>${Math.round(faces).toLocaleString()}</strong></span>
+          <span>Tamanho <strong>${formatBytes(tamanho)}</strong></span>
+          <span>Dimensão <strong>${size.x.toFixed(1)} × ${size.y.toFixed(1)} × ${size.z.toFixed(1)}</strong></span>
+        `;
+
+        canvas3d.__resetCam = () => { camera.position.set(3, 2, 3); controls.target.set(0,0,0); controls.update(); };
+        canvas3d.__toggleWire = () => {
+          wireframeMode = !wireframeMode;
+          object.traverse(c => { if (c.isMesh) c.material.wireframe = wireframeMode; });
+        };
+        canvas3d.__toggleGrid = () => { gridVisible = !gridVisible; grid.visible = gridVisible; };
+      }
+
+      function onError(err) {
+        infoPanel.innerHTML = `<span style="color:var(--color-error)">Erro ao carregar modelo</span>`;
+        console.error('3D load error:', err);
+      }
+
+      if (['gltf', 'glb'].includes(ext)) {
+        new GLTFLoader().load(caminho, (gltf) => onModelLoaded(gltf.scene), undefined, onError);
+      } else if (ext === 'stl') {
+        new STLLoader().load(caminho, (geometry) => {
+          const material = new THREE.MeshStandardMaterial({ color: 0x8888cc, metalness: 0.3, roughness: 0.6 });
+          onModelLoaded(new THREE.Mesh(geometry, material));
+        }, undefined, onError);
+      } else if (ext === 'obj') {
+        new OBJLoader().load(caminho, onModelLoaded, undefined, onError);
+      } else {
+        infoPanel.innerHTML = `<span>Formato 3D não suportado para preview</span>`;
+      }
+
+      // Animation loop
+      let animId;
+      function animate() {
+        animId = requestAnimationFrame(animate);
+        controls.update();
+        renderer.render(scene, camera);
+      }
+      animate();
+
+      // Cleanup observer
+      const observer = new MutationObserver(() => {
+        if (!container.contains(canvas3d)) {
+          cancelAnimationFrame(animId);
+          renderer.dispose();
+          observer.disconnect();
+        }
+      });
+      observer.observe(container, { childList: true });
     }
 
-    function obterCoordenadaPorta(node, port) {
-      const x = node.pos_x;
-      const y = node.pos_y;
-      const w = node.largura;
-      const h = node.altura;
+    // ==================== IMAGE VIEWER ====================
+    function renderizarImagem(container, caminho, titulo) {
+      container.innerHTML = `
+        <div class="image-viewer" id="img-viewer">
+          <img src="${caminho}" id="img-preview" style="transition: transform 0.1s ease;">
+        </div>
+      `;
 
-      if (port === 'left') return { x: x, y: y + h / 2 };
+      const viewer = document.getElementById('img-viewer');
+      const img = document.getElementById('img-preview');
+      let imgZoom = 1, imgPanX = 0, imgPanY = 0, imgDragging = false, imgSX = 0, imgSY = 0;
+
+      img.onload = () => {
+        const vw = viewer.clientWidth, vh = viewer.clientHeight;
+        const scale = Math.min(vw / img.naturalWidth, vh / img.naturalHeight, 1) * 0.9;
+        imgZoom = scale;
+        imgPanX = (vw - img.naturalWidth * scale) / 2;
+        imgPanY = (vh - img.naturalHeight * scale) / 2;
+        updateImgTransform();
+      };
+
+      function updateImgTransform() {
+        img.style.left = imgPanX + 'px';
+        img.style.top = imgPanY + 'px';
+        img.style.width = (img.naturalWidth * imgZoom) + 'px';
+        img.style.height = (img.naturalHeight * imgZoom) + 'px';
+      }
+
+      viewer.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const f = 0.1;
+        imgZoom = e.deltaY < 0 ? imgZoom * (1 + f) : imgZoom * (1 - f);
+        imgZoom = Math.max(0.1, Math.min(10, imgZoom));
+        updateImgTransform();
+      });
+
+      viewer.addEventListener('mousedown', (e) => { imgDragging = true; imgSX = e.clientX - imgPanX; imgSY = e.clientY - imgPanY; });
+      viewer.addEventListener('mousemove', (e) => { if (imgDragging) { imgPanX = e.clientX - imgSX; imgPanY = e.clientY - imgSY; updateImgTransform(); } });
+      viewer.addEventListener('mouseup', () => imgDragging = false);
+      viewer.addEventListener('mouseleave', () => imgDragging = false);
+    }
+
+    // ==================== METADATA VIEWER ====================
+    function renderizarMetadados(container, titulo, ext, tamanho, tipo) {
+      let iconSvg = '';
+      let title = '';
+      let color = '';
+
+      if (tipo === 'pcb') {
+        color = 'var(--color-pcb)';
+        title = 'Schematic / PCB Design';
+        iconSvg = ICONS.pcb.replace('width="16"','width="56"').replace('height="16"','height="56"');
+      } else if (tipo === 'autocad') {
+        color = 'var(--color-autocad)';
+        title = 'AutoCAD Drawing';
+        iconSvg = ICONS.autocad.replace('width="16"','width="56"').replace('height="16"','height="56"');
+      } else {
+        color = 'var(--color-doc)';
+        title = 'Document';
+        iconSvg = ICONS.file.replace('width="16"','width="56"').replace('height="16"','height="56"');
+      }
+
+      container.innerHTML = `
+        <div class="metadata-panel">
+          <div class="metadata-icon" style="color:${color};border-color:${color}33">${iconSvg}</div>
+          <h2 style="font-size:20px;font-weight:600;color:var(--text-primary);margin-top:4px;">${titulo}</h2>
+          <p style="color:var(--text-muted);font-size:14px;">${title}</p>
+          <div class="metadata-details">
+            <div class="metadata-item">
+              <div class="metadata-item-label">Formato</div>
+              <div class="metadata-item-value">${ext.toUpperCase()}</div>
+            </div>
+            <div class="metadata-item">
+              <div class="metadata-item-label">Tamanho</div>
+              <div class="metadata-item-value">${formatBytes(tamanho)}</div>
+            </div>
+            <div class="metadata-item">
+              <div class="metadata-item-label">Tipo</div>
+              <div class="metadata-item-value">${title}</div>
+            </div>
+            <div class="metadata-item">
+              <div class="metadata-item-label">Status</div>
+              <div class="metadata-item-value" style="color:var(--color-success)">Pronto</div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // ==================== ALGORITHMS ====================
+    function obterCoordenadaPorta(node, port) {
+      const x = node.pos_x, y = node.pos_y;
+      const w = node.largura || 240, h = node.altura || 150;
+      if (port === 'left') return { x, y: y + h / 2 };
       if (port === 'right') return { x: x + w, y: y + h / 2 };
-      if (port === 'top') return { x: x + w / 2, y: y };
+      if (port === 'top') return { x: x + w / 2, y };
       if (port === 'bottom') return { x: x + w / 2, y: y + h };
       return { x, y };
     }
 
-    function calcularBezier(x1, y1, x2, y2, portOrigem, portDestino) {
-      // Offset de curvatura
-      let offset = Math.abs(x2 - x1) * 0.4;
-      if (offset < 40) offset = 40;
-
-      let cp1x = x1;
-      let cp1y = y1;
-      let cp2x = x2;
-      let cp2y = y2;
-
-      // Mapear pontos de controle baseados nas portas
-      if (portOrigem === 'right') cp1x += offset;
-      else if (portOrigem === 'left') cp1x -= offset;
-      else if (portOrigem === 'bottom') cp1y += offset;
-      else if (portOrigem === 'top') cp1y -= offset;
-
-      if (portDestino === 'right') cp2x += offset;
-      else if (portDestino === 'left') cp2x -= offset;
-      else if (portDestino === 'bottom') cp2y += offset;
-      else if (portDestino === 'top') cp2y -= offset;
-
+    function calcularBezier(x1, y1, x2, y2, pO, pD) {
+      let off = Math.max(40, Math.abs(x2 - x1) * 0.4);
+      let cp1x = x1, cp1y = y1, cp2x = x2, cp2y = y2;
+      if (pO === 'right') cp1x += off; else if (pO === 'left') cp1x -= off;
+      else if (pO === 'bottom') cp1y += off; else if (pO === 'top') cp1y -= off;
+      if (pD === 'right') cp2x += off; else if (pD === 'left') cp2x -= off;
+      else if (pD === 'bottom') cp2y += off; else if (pD === 'top') cp2y -= off;
       return `M ${x1} ${y1} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${x2} ${y2}`;
     }
 
     function organizarAutomatico() {
-      // Layout de grid básico dos nós existentes
-      let x = 100;
-      let y = 100;
+      let x = 100, y = 100;
       nos.forEach((no, idx) => {
-        no.pos_x = x;
-        no.pos_y = y;
+        no.pos_x = x; no.pos_y = y;
         salvarPosicaoNo(no);
-        
         x += 300;
-        if ((idx + 1) % 3 === 0) {
-          x = 100;
-          y += 240;
-        }
+        if ((idx + 1) % 3 === 0) { x = 100; y += 240; }
       });
       renderizarNos();
       renderizarLigacoes();
+      atualizarMinimap();
+      showToast('Layout organizado automaticamente.', 'success');
     }
 
-    // --- UTILITÁRIOS ---
-
-    function obterIconePorTipo(tipo) {
-      if (tipo === '3d_model') return '⚙';
-      if (tipo === 'pcb_design') return '🔌';
-      if (tipo === 'autocad') return '📐';
-      if (tipo === 'imagem') return '🖼';
-      if (tipo === 'pasta') return '📁';
-      return '📄';
-    }
-
-    function formatBytes(bytes, decimals = 2) {
-      if (bytes === 0) return '0 Bytes';
+    // ==================== UTILITIES ====================
+    function formatBytes(bytes, decimals = 1) {
+      if (!bytes || bytes === 0) return '0 B';
       const k = 1024;
-      const dm = decimals < 0 ? 0 : decimals;
-      const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+      const sizes = ['B', 'KB', 'MB', 'GB'];
       const i = Math.floor(Math.log(bytes) / Math.log(k));
-      return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(decimals)) + ' ' + sizes[i];
     }
+
+    // Make functions globally accessible
+    window.startPan = startPan;
+    window.dragCanvas = dragCanvas;
+    window.endPan = endPan;
+    window.handleZoom = handleZoom;
+    window.ajustarZoom = ajustarZoom;
+    window.resetarZoomPan = resetarZoomPan;
+    window.criarNoNota = criarNoNota;
+    window.criarNoPasta = criarNoPasta;
+    window.criarNovaPasta = criarNovaPasta;
+    window.organizarAutomatico = organizarAutomatico;
+    window.removerNo = removerNo;
+    window.startConnecting = startConnecting;
+    window.fecharPreview = fecharPreview;
+    window.handleFileUpload = handleFileUpload;
+    window.filtrarArquivos = filtrarArquivos;
+    window.navegarPasta = navegarPasta;
+    window.toggleFolder = toggleFolder;
+    window.mostrarContextMenu = mostrarContextMenu;
+    window.editarNomeNo = editarNomeNo;
+    window.moverNoParaPasta = moverNoParaPasta;
+    window.removerNoContexto = removerNoContexto;
+    window.showToast = showToast;
   </script>
 </body>
 </html>

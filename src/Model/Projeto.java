@@ -29,10 +29,14 @@ public class Projeto {
     @Coluna(nome = "atualizado_em", tipo = "BIGINT")
     private long atualizadoEm;
 
+    @Coluna(nome = "tenant_id", tipo = "INT", naoNulo = true, padrao = "1")
+    private int tenantId;
+
     public Projeto() {
         this.criadoEm = System.currentTimeMillis();
         this.atualizadoEm = System.currentTimeMillis();
         this.icone = "📁";
+        this.tenantId = 1;
     }
 
     public int getId() { return id; }
@@ -58,4 +62,7 @@ public class Projeto {
 
     public long getAtualizadoEm() { return atualizadoEm; }
     public void setAtualizadoEm(long atualizadoEm) { this.atualizadoEm = atualizadoEm; }
+
+    public int getTenantId() { return tenantId; }
+    public void setTenantId(int tenantId) { this.tenantId = tenantId; }
 }

@@ -1,0 +1,466 @@
+/* ================================================================
+   VAULTRA CANVAS CSS
+   Estilos específicos para o Workspace Sandbox (nós, ligações, etc)
+   ================================================================ */
+
+/* ==================== WORKSPACE LAYOUT ==================== */
+.workspace {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  background: var(--vault-900);
+}
+
+.workspace-sidebar {
+  width: 280px;
+  background: var(--vault-800);
+  border-right: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  z-index: 10;
+  box-shadow: var(--shadow-md);
+  flex-shrink: 0;
+}
+
+.workspace-sidebar-header {
+  padding: 20px;
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.workspace-brand-logo {
+  width: 32px; height: 32px;
+  border-radius: var(--radius-sm);
+  background: var(--accent-gradient);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 0 10px var(--accent-glow);
+  color: white; font-family: 'Outfit', sans-serif; font-weight: 700;
+}
+
+.workspace-brand-title {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: var(--text-primary);
+}
+
+.workspace-panels {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.panel {
+  background: var(--vault-700);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 16px;
+}
+
+.panel-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.workspace-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+.workspace-toolbar {
+  height: 56px;
+  background: var(--vault-850);
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  z-index: 10;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.toolbar-title {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 600;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.toolbar-title .badge {
+  font-size: 0.7rem;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  background: rgba(91, 141, 239, 0.15);
+  color: var(--accent-blue);
+  border: 1px solid rgba(91, 141, 239, 0.3);
+}
+
+.btn-icon {
+  width: 36px; height: 36px;
+  display: flex; align-items: center; justify-content: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btn-icon:hover {
+  background: var(--vault-700);
+  color: var(--text-primary);
+  border-color: var(--border-default);
+}
+
+/* ==================== CANVAS AREA ==================== */
+#canvas-container {
+  flex: 1;
+  position: relative;
+  background: var(--vault-900);
+  overflow: hidden;
+  cursor: grab;
+}
+
+#canvas-container:active {
+  cursor: grabbing;
+}
+
+/* Background grid patters */
+#canvas-container::before {
+  content: '';
+  position: absolute;
+  top: -1000px; left: -1000px; right: -1000px; bottom: -1000px;
+  background-image:
+    radial-gradient(var(--border-subtle) 1px, transparent 1px),
+    radial-gradient(var(--border-subtle) 1px, transparent 1px);
+  background-position: 0 0, 20px 20px;
+  background-size: 40px 40px, 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.5;
+}
+
+#canvas-content {
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  transform-origin: 0 0;
+  z-index: 1;
+}
+
+svg {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 1;
+  overflow: visible;
+}
+
+/* ==================== NÓS DO CANVAS ==================== */
+.node {
+  position: absolute;
+  background: var(--vault-800);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  width: 220px;
+  box-shadow: var(--shadow-md);
+  user-select: none;
+  z-index: 2;
+  transition: box-shadow var(--transition-fast), border-color var(--transition-fast);
+  cursor: move;
+  display: flex;
+  flex-direction: column;
+}
+
+.node:hover {
+  border-color: var(--border-hover);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+}
+
+.node.selected {
+  border-color: var(--accent-blue);
+  box-shadow: 0 0 0 2px var(--accent-glow), var(--shadow-lg);
+  z-index: 3;
+}
+
+.node-header {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border-subtle);
+  background: rgba(255, 255, 255, 0.02);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+}
+
+.node-title {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.node-remove {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 2px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.node-remove:hover {
+  color: var(--color-error);
+  background: rgba(248, 113, 113, 0.1);
+}
+
+.node-body {
+  padding: 12px;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  min-height: 40px;
+  word-break: break-word;
+}
+
+/* Ports */
+.port-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: absolute;
+  width: 100%;
+}
+
+.port-container-top { top: -6px; }
+.port-container-bottom { bottom: -6px; }
+.port-container-left { top: 50%; left: -6px; transform: translateY(-50%); width: auto; flex-direction: column; }
+.port-container-right { top: 50%; right: -6px; transform: translateY(-50%); width: auto; flex-direction: column; }
+
+.port {
+  width: 12px;
+  height: 12px;
+  background: var(--vault-700);
+  border: 2px solid var(--accent-blue);
+  border-radius: 50%;
+  cursor: crosshair;
+  transition: all var(--transition-fast);
+}
+
+.port:hover {
+  background: var(--accent-blue);
+  transform: scale(1.3);
+  box-shadow: 0 0 10px var(--accent-glow);
+}
+
+/* ==================== CONNECTIONS ==================== */
+.connection-path {
+  fill: none;
+  stroke: var(--text-muted);
+  stroke-width: 2;
+  transition: stroke 0.2s, stroke-width 0.2s;
+  pointer-events: visibleStroke;
+  cursor: pointer;
+}
+
+.connection-path:hover {
+  stroke: var(--accent-blue);
+  stroke-width: 3;
+  filter: drop-shadow(0 0 6px var(--accent-glow));
+}
+
+.connection-path.selected {
+  stroke: var(--accent-purple);
+  stroke-width: 3;
+  filter: drop-shadow(0 0 8px var(--purple-glow));
+}
+
+/* ==================== ARVORE DE ARQUIVOS ==================== */
+.tree-container {
+  margin-top: 8px;
+}
+
+.tree-item {
+  display: flex;
+  align-items: center;
+  padding: 6px 8px;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  margin-bottom: 2px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.tree-item:hover {
+  background: var(--vault-600);
+  color: var(--text-primary);
+}
+
+.tree-icon {
+  margin-right: 8px;
+  color: var(--accent-blue);
+  opacity: 0.8;
+  display: flex;
+}
+
+.tree-level-1 { padding-left: 20px; }
+.tree-level-2 { padding-left: 36px; }
+.tree-level-3 { padding-left: 52px; }
+
+/* ==================== MINI MAP (Opcional) ==================== */
+.minimap {
+  position: absolute;
+  bottom: 24px;
+  right: 24px;
+  width: 180px;
+  height: 120px;
+  background: rgba(14, 17, 24, 0.8);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  backdrop-filter: blur(8px);
+  z-index: 10;
+  box-shadow: var(--shadow-md);
+}
+
+/* ==================== TOASTS ==================== */
+#toast-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 9999;
+}
+
+.toast {
+  background: var(--vault-800);
+  border: 1px solid var(--border-subtle);
+  border-left: 4px solid var(--accent-blue);
+  padding: 14px 20px;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  animation: toastIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  max-width: 350px;
+}
+
+.toast.success { border-left-color: var(--color-success); }
+.toast.error { border-left-color: var(--color-error); }
+.toast.warning { border-left-color: var(--color-warning); }
+
+.toast-closing {
+  animation: toastOut 0.3s ease-in forwards;
+}
+
+/* ==================== MODALS ==================== */
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(5, 6, 8, 0.75);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition-fast);
+}
+
+.modal-overlay.active {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.modal {
+  background: var(--vault-800);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  width: 480px;
+  max-width: 90vw;
+  box-shadow: var(--shadow-xl);
+  transform: scale(0.95) translateY(10px);
+  transition: transform var(--transition-spring);
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-overlay.active .modal {
+  transform: scale(1) translateY(0);
+}
+
+.modal-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-title {
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+
+.modal-close {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: var(--radius-sm);
+}
+
+.modal-close:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+}
+
+.modal-body {
+  padding: 24px;
+}
+
+.modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+}

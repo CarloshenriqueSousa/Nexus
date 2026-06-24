@@ -93,10 +93,18 @@ public class AuthManager {
 		}
 
 		// 3. Extrair campos do payload
-		String username = extrairCampoString(payloadJson, "sub");
-		int id = extrairCampoInt(payloadJson, "id");
-		String cargo = extrairCampoString(payloadJson, "cargo");
-		long exp = extrairCampoLong(payloadJson, "exp");
+		java.util.Map<String, Object> payload;
+		try {
+			payload = Data.JsonParser.parse(payloadJson);
+		} catch (Exception e) {
+			System.err.println("[JWT] Erro ao fazer parse do payload: " + e.getMessage());
+			return null;
+		}
+
+		String username = Data.JsonParser.getString(payload, "sub");
+		int id = Data.JsonParser.getInt(payload, "id", -1);
+		String cargo = Data.JsonParser.getString(payload, "cargo");
+		long exp = Data.JsonParser.getLong(payload, "exp", -1);
 
 		if (username == null || cargo == null) return null;
 
@@ -220,45 +228,4 @@ public class AuthManager {
 				.replace("\r", "\\r");
 	}
 
-	// ==================== Mini-parser JSON ====================
-
-	private static String extrairCampoString(String json, String campo) {
-		String busca = "\"" + campo + "\":\"";
-		int inicio = json.indexOf(busca);
-		if (inicio == -1) return null;
-		inicio += busca.length();
-		int fim = json.indexOf("\"", inicio);
-		if (fim == -1) return null;
-		return json.substring(inicio, fim);
-	}
-
-	private static int extrairCampoInt(String json, String campo) {
-		String busca = "\"" + campo + "\":";
-		int inicio = json.indexOf(busca);
-		if (inicio == -1) return -1;
-		inicio += busca.length();
-		StringBuilder sb = new StringBuilder();
-		for (int i = inicio; i < json.length(); i++) {
-			char c = json.charAt(i);
-			if (Character.isDigit(c) || c == '-') sb.append(c);
-			else break;
-		}
-		try { return Integer.parseInt(sb.toString()); }
-		catch (NumberFormatException e) { return -1; }
-	}
-
-	private static long extrairCampoLong(String json, String campo) {
-		String busca = "\"" + campo + "\":";
-		int inicio = json.indexOf(busca);
-		if (inicio == -1) return -1;
-		inicio += busca.length();
-		StringBuilder sb = new StringBuilder();
-		for (int i = inicio; i < json.length(); i++) {
-			char c = json.charAt(i);
-			if (Character.isDigit(c) || c == '-') sb.append(c);
-			else break;
-		}
-		try { return Long.parseLong(sb.toString()); }
-		catch (NumberFormatException e) { return -1; }
-	}
 }

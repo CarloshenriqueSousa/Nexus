@@ -315,6 +315,8 @@ public class Main {
 			}
 		});
 
+		router.post("/api/admin/sandbox/exec", Security.SandboxHandler::handle);
+
 		// --- API DE PROJETOS E CANVAS ---
 
 		// Listar projetos do usuário
@@ -591,7 +593,7 @@ public class Main {
 			}
 		});
 
-		// Upload de arquivo
+		// Upload de arquivo (suporta pasta_id para upload direto em pasta)
 		router.post("/api/projetos/{id}/upload", req -> {
 			try {
 				int projetoId = Integer.parseInt(req.getParametroPath("id"));
@@ -602,7 +604,8 @@ public class Main {
 				String corpo = req.getCorpo();
 				String nome = extrairCampoJson(corpo, "name");
 				String contentBase64 = extrairCampoJson(corpo, "content");
-				String tipoArquivo = extrairCampoJson(corpo, "type"); // "3d_model", "pcb_design", "autocad", "imagem", etc.
+				String tipoArquivo = extrairCampoJson(corpo, "type");
+				String pastaIdStr = extrairCampoJson(corpo, "pasta_id");
 				if (tipoArquivo == null || tipoArquivo.isBlank() || tipoArquivo.equals("null")) {
 					tipoArquivo = Files.FilesInfo.obterTipoArquivo(nome);
 				}
@@ -623,6 +626,11 @@ public class Main {
 				aq.setTamanhoBytes(bytes.length);
 				aq.setTipoArquivo(tipoArquivo != null ? tipoArquivo : "documento");
 				aq.setTipoMime(Data.MimeTypes.porCaminho(nome));
+
+				// Atribuir à pasta, se especificada
+				if (pastaIdStr != null && !pastaIdStr.isBlank() && !pastaIdStr.equals("null")) {
+					aq.setPastaPaiId(Integer.parseInt(pastaIdStr));
+				}
 
 				GerenciadorEntidade.salvar(aq);
 
@@ -658,11 +666,21 @@ public class Main {
 			}
 		});
 
-		// Listar arquivos do projeto
+		// Listar arquivos do projeto (suporta ?pasta_id=X para filtrar por pasta)
 		router.get("/api/projetos/{id}/arquivos", req -> {
 			try {
 				int projetoId = Integer.parseInt(req.getParametroPath("id"));
 				List<ArquivoProjeto> arquivos = GerenciadorEntidade.buscarPor(ArquivoProjeto.class, "projetoId", projetoId);
+
+				// Filtrar por pasta_id se especificado
+				String pastaIdParam = req.getParametrosQuery("pasta_id");
+				if (pastaIdParam != null && !pastaIdParam.isBlank()) {
+					int pastaId = Integer.parseInt(pastaIdParam);
+					arquivos = arquivos.stream()
+							.filter(a -> a.getPastaPaiId() != null && a.getPastaPaiId() == pastaId)
+							.collect(java.util.stream.Collectors.toList());
+				}
+
 				StringBuilder sb = new StringBuilder("[");
 				for (int i = 0; i < arquivos.size(); i++) {
 					if (i > 0) sb.append(",");
@@ -675,12 +693,153 @@ public class Main {
 							.add("tipo_mime", aq.getTipoMime())
 							.add("tamanho_bytes", aq.getTamanhoBytes())
 							.add("tipo_arquivo", aq.getTipoArquivo())
+							.add("eh_pasta", aq.isEhPasta())
+							.add("pasta_pai_id", aq.getPastaPaiId())
+							.add("criado_em", aq.getCriadoEm())
 							.build());
 				}
 				sb.append("]");
 				return HttpResponse.ok().json(sb.toString());
 			} catch (NumberFormatException e) {
 				return HttpResponse.requisicaoInvalida("ID do projeto inválido.");
+			}
+		});
+
+		// Criar pasta dentro do projeto
+		router.post("/api/projetos/{id}/pastas", req -> {
+			try {
+				int projetoId = Integer.parseInt(req.getParametroPath("id"));
+				String corpo = req.getCorpo();
+				String nome = extrairCampoJson(corpo, "nome");
+				String pastaPaiIdStr = extrairCampoJson(corpo, "pasta_pai_id");
+
+				if (nome == null || nome.isBlank()) {
+					return HttpResponse.requisicaoInvalida("Nome da pasta é obrigatório.");
+				}
+
+				ArquivoProjeto pasta = new ArquivoProjeto();
+				pasta.setProjetoId(projetoId);
+				pasta.setNome(nome);
+				pasta.setEhPasta(true);
+				pasta.setCaminho("");
+				pasta.setTipoArquivo("pasta");
+				pasta.setTipoMime("");
+
+				if (pastaPaiIdStr != null && !pastaPaiIdStr.isBlank() && !pastaPaiIdStr.equals("null")) {
+					pasta.setPastaPaiId(Integer.parseInt(pastaPaiIdStr));
+				}
+
+				GerenciadorEntidade.salvar(pasta);
+
+				String json = new JsonBuilder()
+						.add("status", "success")
+						.add("id", pasta.getId())
+						.add("nome", pasta.getNome())
+						.add("eh_pasta", true)
+						.build();
+				return HttpResponse.ok().json(json);
+			} catch (NumberFormatException e) {
+				return HttpResponse.requisicaoInvalida("ID inválido.");
+			}
+		});
+
+		// Mover arquivo/pasta para outra pasta
+		router.put("/api/projetos/{id}/arquivos/{aid}/mover", req -> {
+			try {
+				int aid = Integer.parseInt(req.getParametroPath("aid"));
+				Optional<ArquivoProjeto> opt = GerenciadorEntidade.buscarPorId(ArquivoProjeto.class, aid);
+				if (opt.isEmpty()) return HttpResponse.naoEncontrado();
+
+				ArquivoProjeto aq = opt.get();
+				String corpo = req.getCorpo();
+				String novaPastaIdStr = extrairCampoJson(corpo, "nova_pasta_id");
+
+				if (novaPastaIdStr == null || novaPastaIdStr.isBlank() || novaPastaIdStr.equals("null")) {
+					aq.setPastaPaiId(null); // Mover para raiz
+				} else {
+					aq.setPastaPaiId(Integer.parseInt(novaPastaIdStr));
+				}
+
+				GerenciadorEntidade.salvar(aq);
+				return HttpResponse.ok().json(JsonBuilder.sucesso("Arquivo movido com sucesso."));
+			} catch (NumberFormatException e) {
+				return HttpResponse.requisicaoInvalida("ID inválido.");
+			}
+		});
+
+		// Árvore hierárquica de arquivos/pastas do projeto
+		router.get("/api/projetos/{id}/arvore", req -> {
+			try {
+				int projetoId = Integer.parseInt(req.getParametroPath("id"));
+				List<ArquivoProjeto> todos = GerenciadorEntidade.buscarPor(ArquivoProjeto.class, "projetoId", projetoId);
+
+				// Construir árvore: separar raiz e filhos
+				StringBuilder raiz = new StringBuilder("[");
+				boolean primeiro = true;
+				for (ArquivoProjeto aq : todos) {
+					if (aq.getPastaPaiId() == null) {
+						if (!primeiro) raiz.append(",");
+						primeiro = false;
+						raiz.append(construirNoArvore(aq, todos));
+					}
+				}
+				raiz.append("]");
+
+				return HttpResponse.ok().json("{\"raiz\":" + raiz.toString() + "}");
+			} catch (NumberFormatException e) {
+				return HttpResponse.requisicaoInvalida("ID do projeto inválido.");
+			}
+		});
+
+		// Deletar pasta (move conteúdo para raiz)
+		router.delete("/api/projetos/{id}/pastas/{pid}", req -> {
+			try {
+				int pid = Integer.parseInt(req.getParametroPath("pid"));
+				Optional<ArquivoProjeto> opt = GerenciadorEntidade.buscarPorId(ArquivoProjeto.class, pid);
+				if (opt.isEmpty()) return HttpResponse.naoEncontrado();
+
+				ArquivoProjeto pasta = opt.get();
+				if (!pasta.isEhPasta()) {
+					return HttpResponse.requisicaoInvalida("O item especificado não é uma pasta.");
+				}
+
+				// Mover todos os filhos da pasta para a raiz (pasta_pai_id = null)
+				int projetoId = pasta.getProjetoId();
+				List<ArquivoProjeto> todos = GerenciadorEntidade.buscarPor(ArquivoProjeto.class, "projetoId", projetoId);
+				for (ArquivoProjeto filho : todos) {
+					if (filho.getPastaPaiId() != null && filho.getPastaPaiId() == pid) {
+						filho.setPastaPaiId(null);
+						GerenciadorEntidade.salvar(filho);
+					}
+				}
+
+				GerenciadorEntidade.remover(ArquivoProjeto.class, pid);
+				return HttpResponse.ok().json(JsonBuilder.sucesso("Pasta removida. Conteúdo movido para a raiz."));
+			} catch (NumberFormatException e) {
+				return HttpResponse.requisicaoInvalida("ID inválido.");
+			}
+		});
+
+		// Renomear pasta
+		router.put("/api/projetos/{id}/pastas/{pid}/renomear", req -> {
+			try {
+				int pid = Integer.parseInt(req.getParametroPath("pid"));
+				Optional<ArquivoProjeto> opt = GerenciadorEntidade.buscarPorId(ArquivoProjeto.class, pid);
+				if (opt.isEmpty()) return HttpResponse.naoEncontrado();
+
+				ArquivoProjeto pasta = opt.get();
+				String corpo = req.getCorpo();
+				String novoNome = extrairCampoJson(corpo, "nome");
+
+				if (novoNome == null || novoNome.isBlank()) {
+					return HttpResponse.requisicaoInvalida("Nome é obrigatório.");
+				}
+
+				pasta.setNome(novoNome);
+				GerenciadorEntidade.salvar(pasta);
+				return HttpResponse.ok().json(JsonBuilder.sucesso("Pasta renomeada com sucesso."));
+			} catch (NumberFormatException e) {
+				return HttpResponse.requisicaoInvalida("ID inválido.");
 			}
 		});
 
@@ -698,8 +857,17 @@ public class Main {
 
 		StaticFilesHandler workspaceDirectory = new StaticFilesHandler("public/Workspace", "/workspace/");
 		router.get("/workspace/*", workspaceDirectory);
+		
+		StaticFilesHandler cssDirectory = new StaticFilesHandler("public/css", "/css/");
+		router.get("/css/*", cssDirectory);
+		
+		StaticFilesHandler assetsDirectory = new StaticFilesHandler("public/assets", "/assets/");
+		router.get("/assets/*", assetsDirectory);
+		
+		StaticFilesHandler jsDirectory = new StaticFilesHandler("public/js", "/js/");
+		router.get("/js/*", jsDirectory);
 
-		HttpServer servidor = new HttpServer(8080, router);
+		HttpServer servidor = new HttpServer(8081, router);
 		servidor.iniciar();
 	}
 
@@ -708,25 +876,52 @@ public class Main {
 		return Map.of("cargo", cargo.name(), "cargo_nome", cargo.getNome());
 	}
 
-	private static String extrairCampoJson(String json, String campo) {
-		String busca = "\"" + campo + "\":\"";
-		int inicio = json.indexOf(busca);
-		if (inicio == -1) {
-			busca = "\"" + campo + "\":";
-			inicio = json.indexOf(busca);
-			if (inicio == -1) return null;
-			inicio += busca.length();
-			StringBuilder sb = new StringBuilder();
-			for (int i = inicio; i < json.length(); i++) {
-				char c = json.charAt(i);
-				if (c == ',' || c == '}' || Character.isWhitespace(c)) break;
-				sb.append(c);
-			}
-			return sb.toString().replace("\"", "").trim();
+	/**
+	 * Constrói recursivamente um nó da árvore de arquivos em JSON.
+	 */
+	private static String construirNoArvore(ArquivoProjeto item, List<ArquivoProjeto> todos) {
+		JsonBuilder jb = new JsonBuilder()
+				.add("id", item.getId())
+				.add("nome", item.getNome())
+				.add("eh_pasta", item.isEhPasta())
+				.add("tipo_arquivo", item.getTipoArquivo() != null ? item.getTipoArquivo() : "")
+				.add("caminho", item.getCaminho() != null ? item.getCaminho() : "")
+				.add("tamanho_bytes", item.getTamanhoBytes())
+				.add("tipo_mime", item.getTipoMime() != null ? item.getTipoMime() : "")
+				.add("criado_em", item.getCriadoEm());
+
+		if (item.getPastaPaiId() != null) {
+			jb.add("pasta_pai_id", item.getPastaPaiId());
 		}
-		inicio += busca.length();
-		int fim = json.indexOf("\"", inicio);
-		if (fim == -1) return null;
-		return json.substring(inicio, fim);
+
+		if (item.isEhPasta()) {
+			// Buscar filhos desta pasta
+			StringBuilder filhos = new StringBuilder("[");
+			boolean primeiro = true;
+			for (ArquivoProjeto filho : todos) {
+				if (filho.getPastaPaiId() != null && filho.getPastaPaiId() == item.getId()) {
+					if (!primeiro) filhos.append(",");
+					primeiro = false;
+					filhos.append(construirNoArvore(filho, todos));
+				}
+			}
+			filhos.append("]");
+
+			// Injetar array de filhos manualmente no JSON
+			String base = jb.build();
+			// Remover o último } e adicionar o campo filhos
+			return base.substring(0, base.length() - 1) + ",\"filhos\":" + filhos.toString() + "}";
+		}
+
+		return jb.build();
+	}
+
+	private static String extrairCampoJson(String json, String campo) {
+		try {
+			java.util.Map<String, Object> map = Data.JsonParser.parse(json);
+			return Data.JsonParser.getString(map, campo);
+		} catch (Exception e) {
+			return null;
+		}
 	}
 }

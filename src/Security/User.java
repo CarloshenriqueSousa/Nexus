@@ -35,12 +35,16 @@ public class User {
 	@Coluna(nome = "deve_trocar_senha", tipo = "BOOLEAN", padrao = "false")
 	private boolean deveTrocarSenha;
 
+	@Coluna(nome = "tenant_id", tipo = "INT", naoNulo = true, padrao = "1")
+	private int tenantId;
+
 	private List<Permissao> permissoes;
 
 	public User() {
 		this.permissoes = new ArrayList<>();
 		this.ativo = true;
 		this.deveTrocarSenha = false;
+		this.tenantId = 1;
 	}
 
 	public User(int id, String username, String senhaHash, String salt, Role cargo) {
@@ -52,6 +56,7 @@ public class User {
 		this.ativo = true;
 		this.deveTrocarSenha = false;
 		this.permissoes = new ArrayList<>();
+		this.tenantId = 1;
 	}
 
 	// ==================== Getters ====================
@@ -63,6 +68,7 @@ public class User {
 	public Role getCargo() { return cargo; }
 	public boolean isAtivo() { return ativo; }
 	public boolean isDeveTrocarSenha() { return deveTrocarSenha; }
+	public int getTenantId() { return tenantId; }
 	public List<Permissao> getPermissoes() { return Collections.unmodifiableList(permissoes); }
 
 	// ==================== Setters ====================
@@ -70,6 +76,7 @@ public class User {
 	public void setCargo(Role cargo) { this.cargo = cargo; }
 	public void setAtivo(boolean ativo) { this.ativo = ativo; }
 	public void setDeveTrocarSenha(boolean deveTrocarSenha) { this.deveTrocarSenha = deveTrocarSenha; }
+	public void setTenantId(int tenantId) { this.tenantId = tenantId; }
 
 	/**
 	 * Atualiza a senha gerando novo salt e hash.
@@ -139,6 +146,7 @@ public class User {
 		sb.append(cargo.name()).append("|");
 		sb.append(ativo).append("|");
 		sb.append(deveTrocarSenha).append("|");
+		sb.append(tenantId).append("|");
 
 		for (int i = 0; i < permissoes.size(); i++) {
 			if (i > 0) sb.append(";");
@@ -163,19 +171,33 @@ public class User {
 		Role cargo = Role.fromString(partes[4]);
 		boolean ativo = Boolean.parseBoolean(partes[5]);
 		boolean deveTrocarSenha = Boolean.parseBoolean(partes[6]);
+		int tenantId = 1;
 
 		User user = new User(id, username, senhaHash, salt, cargo);
 		user.setAtivo(ativo);
 		user.setDeveTrocarSenha(deveTrocarSenha);
 
-		// Parse permissões (campo 8, opcional)
-		if (partes.length == 8 && !partes[7].isBlank()) {
-			String[] permStrs = partes[7].split(";");
-			for (String permStr : permStrs) {
-				if (!permStr.isBlank()) {
-					user.adicionarPermissao(Permissao.deserializar(permStr));
+		// Parse tenant_id and permissoes
+		if (partes.length == 8) {
+			String[] extraParts = partes[7].split("\\|", 2);
+			if (extraParts.length > 0 && !extraParts[0].isBlank()) {
+				try {
+					tenantId = Integer.parseInt(extraParts[0]);
+				} catch (NumberFormatException e) {
+					// Fallback
 				}
 			}
+			user.setTenantId(tenantId);
+			if (extraParts.length == 2 && !extraParts[1].isBlank()) {
+				String[] permStrs = extraParts[1].split(";");
+				for (String permStr : permStrs) {
+					if (!permStr.isBlank()) {
+						user.adicionarPermissao(Permissao.deserializar(permStr));
+					}
+				}
+			}
+		} else {
+			user.setTenantId(tenantId);
 		}
 
 		return user;
