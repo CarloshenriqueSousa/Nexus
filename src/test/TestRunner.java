@@ -17,6 +17,7 @@ public class TestRunner {
         totalFailures += runTest("AuthManager - Token Malformado", AuthManagerTest::testTokenMalformado);
 
         totalFailures += runTest("GerenciadorEntidade - Operacoes de CRUD", GerenciadorEntidadeTest::testCrudOperations);
+        totalFailures += runTest("GerenciadorEntidade - Sincronizacao de Sequencia PostgreSQL", GerenciadorEntidadeTest::testSequenceSyncAndUserCreation);
         totalFailures += runTest("UserStore - Operacoes com Usuario", GerenciadorEntidadeTest::testUserStoreOperations);
 
         System.out.println("==================================================");

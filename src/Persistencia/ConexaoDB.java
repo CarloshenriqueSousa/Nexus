@@ -120,7 +120,13 @@ public class ConexaoDB {
 	public static Connection obterConexao() throws SQLException {
 		validarDisponibilidade();
 
-		Connection conn = pool.poll();
+		Connection conn = null;
+		try {
+			conn = pool.poll(5, java.util.concurrent.TimeUnit.SECONDS);
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+		}
+
 		if (conn == null) {
 			return criarNovaConexao();
 		}

@@ -950,133 +950,158 @@ public class SandboxPages {
 
     // ==================== 3D VIEWER (Three.js) ====================
     function renderizar3D(container, caminho, ext, tamanho) {
-      const canvas3d = document.createElement('canvas');
-      canvas3d.style.cssText = 'width:100%;height:100%;display:block;';
-      container.appendChild(canvas3d);
+      if (typeof THREE === 'undefined' || !window.THREE) {
+        container.innerHTML = `
+          <div style="padding:40px;text-align:center;color:var(--color-text-secondary);">
+            <p>Carregando dependências 3D (Three.js)...</p>
+            <button class="btn btn-secondary" style="margin-top:12px" onclick="setTimeout(() => renderizar3D(this.parentElement.parentElement, '${caminho}', '${ext}', ${tamanho}), 500)">Tentar Novamente</button>
+          </div>`;
+        return;
+      }
 
-      const scene = new THREE.Scene();
-      scene.background = new THREE.Color(0x060810);
+      try {
+        const THREE = window.THREE;
+        const OrbitControls = window.OrbitControls;
+        const GLTFLoader = window.GLTFLoader;
+        const STLLoader = window.STLLoader;
+        const OBJLoader = window.OBJLoader;
 
-      const camera = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.1, 2000);
-      camera.position.set(3, 2, 3);
+        const canvas3d = document.createElement('canvas');
+        canvas3d.style.cssText = 'width:100%;height:100%;display:block;';
+        container.appendChild(canvas3d);
 
-      const renderer = new THREE.WebGLRenderer({ canvas: canvas3d, antialias: true });
-      renderer.setSize(container.clientWidth, container.clientHeight);
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x060810);
 
-      const controls = new OrbitControls(camera, renderer.domElement);
-      controls.enableDamping = true;
-      controls.dampingFactor = 0.08;
+        const camera = new THREE.PerspectiveCamera(50, (container.clientWidth || 600) / (container.clientHeight || 400), 0.1, 2000);
+        camera.position.set(3, 2, 3);
 
-      // Lighting
-      scene.add(new THREE.AmbientLight(0xcccccc, 0.6));
-      const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
-      dirLight.position.set(5, 10, 7);
-      scene.add(dirLight);
+        const renderer = new THREE.WebGLRenderer({ canvas: canvas3d, antialias: true });
+        renderer.setSize(container.clientWidth || 600, container.clientHeight || 400);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
 
-      // Grid
-      const grid = new THREE.GridHelper(20, 20, 0x1a1f30, 0x111525);
-      scene.add(grid);
+        const controls = OrbitControls ? new OrbitControls(camera, renderer.domElement) : null;
+        if (controls) {
+          controls.enableDamping = true;
+          controls.dampingFactor = 0.08;
+        }
 
-      // Info panel
-      const infoPanel = document.createElement('div');
-      infoPanel.className = 'viewer-3d-info';
-      infoPanel.innerHTML = `<span>Carregando modelo...</span>`;
-      container.appendChild(infoPanel);
+        // Lighting
+        scene.add(new THREE.AmbientLight(0xcccccc, 0.6));
+        const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
+        dirLight.position.set(5, 10, 7);
+        scene.add(dirLight);
 
-      // Controls bar
-      const controlsBar = document.createElement('div');
-      controlsBar.className = 'viewer-3d-controls';
-      let wireframeMode = false;
-      let gridVisible = true;
-      controlsBar.innerHTML = `
-        <button class="viewer-3d-btn" onclick="this.closest('.modal-body').querySelector('canvas').__resetCam?.()">Reset Camera</button>
-        <button class="viewer-3d-btn" onclick="this.closest('.modal-body').querySelector('canvas').__toggleWire?.()">Wireframe</button>
-        <button class="viewer-3d-btn" onclick="this.closest('.modal-body').querySelector('canvas').__toggleGrid?.()">Grid</button>
-      `;
-      container.appendChild(controlsBar);
+        // Grid
+        const grid = new THREE.GridHelper(20, 20, 0x1a1f30, 0x111525);
+        scene.add(grid);
 
-      // Load model
-      function onModelLoaded(object) {
-        const box = new THREE.Box3().setFromObject(object);
-        const size = new THREE.Vector3();
-        box.getSize(size);
-        const center = new THREE.Vector3();
-        box.getCenter(center);
+        // Info panel
+        const infoPanel = document.createElement('div');
+        infoPanel.className = 'viewer-3d-info';
+        infoPanel.innerHTML = `<span>Carregando modelo...</span>`;
+        container.appendChild(infoPanel);
 
-        object.position.sub(center);
-        const maxDim = Math.max(size.x, size.y, size.z);
-        const scale = 3 / maxDim;
-        object.scale.multiplyScalar(scale);
+        // Controls bar
+        const controlsBar = document.createElement('div');
+        controlsBar.className = 'viewer-3d-controls';
+        let wireframeMode = false;
+        let gridVisible = true;
+        controlsBar.innerHTML = `
+          <button class="viewer-3d-btn" onclick="this.closest('.modal-body').querySelector('canvas').__resetCam?.()">Reset Camera</button>
+          <button class="viewer-3d-btn" onclick="this.closest('.modal-body').querySelector('canvas').__toggleWire?.()">Wireframe</button>
+          <button class="viewer-3d-btn" onclick="this.closest('.modal-body').querySelector('canvas').__toggleGrid?.()">Grid</button>
+        `;
+        container.appendChild(controlsBar);
 
-        scene.add(object);
+        // Load model
+        function onModelLoaded(object) {
+          const box = new THREE.Box3().setFromObject(object);
+          const size = new THREE.Vector3();
+          box.getSize(size);
+          const center = new THREE.Vector3();
+          box.getCenter(center);
 
-        camera.position.set(size.x * scale * 1.2, size.y * scale * 1.2, size.z * scale * 1.5);
-        controls.target.set(0, 0, 0);
-        controls.update();
+          object.position.sub(center);
+          const maxDim = Math.max(size.x, size.y, size.z) || 1;
+          const scale = 3 / maxDim;
+          object.scale.multiplyScalar(scale);
 
-        // Count geometry info
-        let vertices = 0, faces = 0;
-        object.traverse(child => {
-          if (child.isMesh && child.geometry) {
-            const geo = child.geometry;
-            vertices += geo.attributes.position ? geo.attributes.position.count : 0;
-            faces += geo.index ? geo.index.count / 3 : (geo.attributes.position ? geo.attributes.position.count / 3 : 0);
+          scene.add(object);
+
+          camera.position.set(size.x * scale * 1.2, size.y * scale * 1.2, size.z * scale * 1.5);
+          if (controls) {
+            controls.target.set(0, 0, 0);
+            controls.update();
+          }
+
+          // Count geometry info
+          let vertices = 0, faces = 0;
+          object.traverse(child => {
+            if (child.isMesh && child.geometry) {
+              const geo = child.geometry;
+              vertices += geo.attributes.position ? geo.attributes.position.count : 0;
+              faces += geo.index ? geo.index.count / 3 : (geo.attributes.position ? geo.attributes.position.count / 3 : 0);
+            }
+          });
+
+          infoPanel.innerHTML = `
+            <span>Vértices <strong>${vertices.toLocaleString()}</strong></span>
+            <span>Faces <strong>${Math.round(faces).toLocaleString()}</strong></span>
+            <span>Tamanho <strong>${formatBytes(tamanho)}</strong></span>
+            <span>Dimensão <strong>${size.x.toFixed(1)} × ${size.y.toFixed(1)} × ${size.z.toFixed(1)}</strong></span>
+          `;
+
+          canvas3d.__resetCam = () => { camera.position.set(3, 2, 3); if (controls) { controls.target.set(0,0,0); controls.update(); } };
+          canvas3d.__toggleWire = () => {
+            wireframeMode = !wireframeMode;
+            object.traverse(c => { if (c.isMesh) c.material.wireframe = wireframeMode; });
+          };
+          canvas3d.__toggleGrid = () => { gridVisible = !gridVisible; grid.visible = gridVisible; };
+        }
+
+        function onError(err) {
+          infoPanel.innerHTML = `<span style="color:var(--color-error)">Erro ao carregar modelo</span>`;
+          console.error('3D load error:', err);
+        }
+
+        if (['gltf', 'glb'].includes(ext) && GLTFLoader) {
+          new GLTFLoader().load(caminho, (gltf) => onModelLoaded(gltf.scene), undefined, onError);
+        } else if (ext === 'stl' && STLLoader) {
+          new STLLoader().load(caminho, (geometry) => {
+            const material = new THREE.MeshStandardMaterial({ color: 0x8888cc, metalness: 0.3, roughness: 0.6 });
+            onModelLoaded(new THREE.Mesh(geometry, material));
+          }, undefined, onError);
+        } else if (ext === 'obj' && OBJLoader) {
+          new OBJLoader().load(caminho, onModelLoaded, undefined, onError);
+        } else {
+          infoPanel.innerHTML = `<span>Formato 3D '${ext}' indisponível para preview direto</span>`;
+        }
+
+        // Animation loop
+        let animId;
+        function animate() {
+          animId = requestAnimationFrame(animate);
+          if (controls) controls.update();
+          renderer.render(scene, camera);
+        }
+        animate();
+
+        // Cleanup observer
+        const observer = new MutationObserver(() => {
+          if (!container.contains(canvas3d)) {
+            cancelAnimationFrame(animId);
+            renderer.dispose();
+            observer.disconnect();
           }
         });
+        observer.observe(container, { childList: true });
 
-        infoPanel.innerHTML = `
-          <span>Vértices <strong>${vertices.toLocaleString()}</strong></span>
-          <span>Faces <strong>${Math.round(faces).toLocaleString()}</strong></span>
-          <span>Tamanho <strong>${formatBytes(tamanho)}</strong></span>
-          <span>Dimensão <strong>${size.x.toFixed(1)} × ${size.y.toFixed(1)} × ${size.z.toFixed(1)}</strong></span>
-        `;
-
-        canvas3d.__resetCam = () => { camera.position.set(3, 2, 3); controls.target.set(0,0,0); controls.update(); };
-        canvas3d.__toggleWire = () => {
-          wireframeMode = !wireframeMode;
-          object.traverse(c => { if (c.isMesh) c.material.wireframe = wireframeMode; });
-        };
-        canvas3d.__toggleGrid = () => { gridVisible = !gridVisible; grid.visible = gridVisible; };
+      } catch (err) {
+        console.error('Erro na inicialização do WebGL:', err);
+        container.innerHTML = `<div style="padding:20px;color:var(--color-error)">Não foi possível carregar o visualizador 3D: ${err.message}</div>`;
       }
-
-      function onError(err) {
-        infoPanel.innerHTML = `<span style="color:var(--color-error)">Erro ao carregar modelo</span>`;
-        console.error('3D load error:', err);
-      }
-
-      if (['gltf', 'glb'].includes(ext)) {
-        new GLTFLoader().load(caminho, (gltf) => onModelLoaded(gltf.scene), undefined, onError);
-      } else if (ext === 'stl') {
-        new STLLoader().load(caminho, (geometry) => {
-          const material = new THREE.MeshStandardMaterial({ color: 0x8888cc, metalness: 0.3, roughness: 0.6 });
-          onModelLoaded(new THREE.Mesh(geometry, material));
-        }, undefined, onError);
-      } else if (ext === 'obj') {
-        new OBJLoader().load(caminho, onModelLoaded, undefined, onError);
-      } else {
-        infoPanel.innerHTML = `<span>Formato 3D não suportado para preview</span>`;
-      }
-
-      // Animation loop
-      let animId;
-      function animate() {
-        animId = requestAnimationFrame(animate);
-        controls.update();
-        renderer.render(scene, camera);
-      }
-      animate();
-
-      // Cleanup observer
-      const observer = new MutationObserver(() => {
-        if (!container.contains(canvas3d)) {
-          cancelAnimationFrame(animId);
-          renderer.dispose();
-          observer.disconnect();
-        }
-      });
-      observer.observe(container, { childList: true });
     }
 
     // ==================== IMAGE VIEWER ====================

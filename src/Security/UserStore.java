@@ -147,8 +147,8 @@ public class UserStore {
 		Optional<User> opt = buscarPorId(id);
 		if (opt.isEmpty()) return false;
 
-		// Deletar permissões antigas
-		GerenciadorEntidade.executarDdl("DELETE FROM permissoes WHERE usuario_id = " + id);
+		// Deletar permissões antigas via PreparedStatement
+		GerenciadorEntidade.executarAtualizacao("DELETE FROM permissoes WHERE usuario_id = ?", id);
 
 		// Salvar as novas
 		for (Permissao p : novasPermissoes) {

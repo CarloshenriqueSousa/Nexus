@@ -256,6 +256,17 @@ public class GerenciadorEntidade {
             }
 
             pstmt.executeUpdate();
+
+            // Ressincronizar a sequência SERIAL do PostgreSQL para evitar conflitos de ID em inserções automáticas futuras
+            Coluna idCol = idField.getAnnotation(Coluna.class);
+            String idColNome = (idCol != null) ? idCol.nome() : "id";
+            String syncSql = "SELECT setval(pg_get_serial_sequence(?, ?), COALESCE((SELECT MAX(" + idColNome + ") FROM " + nomeTabela + "), 1))";
+            try (PreparedStatement seqStmt = conn.prepareStatement(syncSql)) {
+                seqStmt.setString(1, nomeTabela);
+                seqStmt.setString(2, idColNome);
+                seqStmt.executeQuery();
+            } catch (Exception ignored) {}
+
             return obj;
         } finally {
             if (pstmt != null) try { pstmt.close(); } catch (SQLException ignored) {}
@@ -449,6 +460,29 @@ public class GerenciadorEntidade {
             System.err.println("[GerenciadorEntidade] Erro ao remover " + classe.getSimpleName() + ": " + e.getMessage());
             e.printStackTrace();
             return false;
+        } finally {
+            if (pstmt != null) try { pstmt.close(); } catch (SQLException ignored) {}
+            ConexaoDB.liberarConexao(conn);
+        }
+    }
+
+    public static int executarAtualizacao(String sql, Object... params) {
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        try {
+            conn = ConexaoDB.obterConexao();
+            pstmt = conn.prepareStatement(sql);
+            if (params != null) {
+                for (int i = 0; i < params.length; i++) {
+                    Object val = params[i];
+                    setParametroPstmt(pstmt, i + 1, val, val != null ? val.getClass() : Object.class);
+                }
+            }
+            return pstmt.executeUpdate();
+        } catch (SQLException e) {
+            System.err.println("[GerenciadorEntidade] Erro ao executar atualização parametrizada: " + e.getMessage());
+            e.printStackTrace();
+            return 0;
         } finally {
             if (pstmt != null) try { pstmt.close(); } catch (SQLException ignored) {}
             ConexaoDB.liberarConexao(conn);

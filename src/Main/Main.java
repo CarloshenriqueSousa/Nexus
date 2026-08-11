@@ -29,6 +29,7 @@ public class Main {
 		java.nio.file.Files.createDirectories(java.nio.file.Paths.get("public/Workspace"));
 
 		// Inicializar tabelas de persistência do negócio
+		GerenciadorEntidade.inicializarTabela(Tenant.class);
 		GerenciadorEntidade.inicializarTabela(Projeto.class);
 		GerenciadorEntidade.inicializarTabela(ArquivoProjeto.class);
 		GerenciadorEntidade.inicializarTabela(NoCanvas.class);
@@ -116,7 +117,9 @@ public class Main {
 			int maxAge = 24 * 3600; // 24 horas em segundos
 
 			String redirectUrl = "/workspace/home";
-			if (user.getCargo() == Role.ADMIN) {
+			if (user.isDeveTrocarSenha()) {
+				redirectUrl = "/workspace/home?trocar_senha=true";
+			} else if (user.getCargo() == Role.ADMIN) {
 				redirectUrl = "/workspace/dashboard";
 			}
 
@@ -126,6 +129,27 @@ public class Main {
 
 		router.get("/logout", req -> {
 			return HttpResponse.redirect("/login").limparCookie("session_token");
+		});
+
+		router.post("/api/me/trocar-senha", req -> {
+			User user = req.getUser();
+			if (user == null) {
+				return HttpResponse.requisicaoInvalida("Não autenticado");
+			}
+
+			Map<String, String> formData = req.getFormData();
+			String novaSenha = formData.get("nova_senha");
+			if (novaSenha == null || novaSenha.isBlank() || novaSenha.length() < 6) {
+				return HttpResponse.requisicaoInvalida("A nova senha deve ter no mínimo 6 caracteres.");
+			}
+
+			UserStore store = router.getUserStore();
+			boolean ok = store.atualizarSenha(user.getId(), novaSenha);
+			if (ok) {
+				return HttpResponse.ok().json(Data.JsonBuilder.sucesso("Senha alterada com sucesso!"));
+			} else {
+				return HttpResponse.erroInterno("Falha ao atualizar a senha no banco de dados.");
+			}
 		});
 
 		// --- ROTAS DA ÁREA DE TRABALHO SEGURA ---

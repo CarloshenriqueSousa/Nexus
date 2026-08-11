@@ -1,0 +1,21 @@
+# ===================================================================
+# NEXUS SANDBOX 2.0 - CONFIGURAÇÃO DE SEGURANÇA E AMBIENTE (EXEMPLO)
+# Copie este arquivo para 'security.properties' na mesma pasta.
+# ===================================================================
+
+# Configurações do Banco de Dados PostgreSQL
+db.url=jdbc:postgresql://localhost:5432/nexus_db
+db.user=nexus
+db.password=nexus
+db.pool.size=5
+
+# Autenticação e Chave JWT
+jwt.secret=defina_uma_chave_secreta_jwt_corporativa_com_no_minimo_32_caracteres
+jwt.expiration.hours=24
+
+# Porta e Servidor HTTP
+server.port=8081
+server.host=0.0.0.0
+
+# Webhook n8n (Automações e Agentes de IA)
+n8n.webhook.url=http://localhost:5678/webhook/nexus-events

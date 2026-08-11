@@ -149,6 +149,28 @@ public class HttpRequest {
 	public String getVersaoHttp() { return versaoHttp; }
 	public String getIpCliente() { return ipCliente; }
 
+	/**
+	 * Retorna o IP real do cliente, respeitando cabeçalhos de Proxy Reverso (X-Forwarded-For).
+	 */
+	public String getIpRealCliente() {
+		String xForwardedFor = getCabecalhos("x-forwarded-for");
+		if (!xForwardedFor.isBlank()) {
+			return xForwardedFor.split(",")[0].trim();
+		}
+		return ipCliente;
+	}
+
+	/**
+	 * Retorna se a requisição original foi feita via HTTPS (seja direta ou via Proxy Reverso X-Forwarded-Proto).
+	 */
+	public boolean isHttps() {
+		String proto = getCabecalhos("x-forwarded-proto");
+		if (!proto.isBlank()) {
+			return proto.equalsIgnoreCase("https");
+		}
+		return false;
+	}
+
 	public String getCabecalhos(String nome) {
 		return cabecalhos.getOrDefault(nome.toLowerCase(), "");
 	}

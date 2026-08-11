@@ -106,8 +106,32 @@ public class GerenciadorEntidadeTest {
         } finally {
             // 5. Limpar do banco
             store.removerUsuario(criado.getId());
-            // Limpar permissoes explicitamente
-            GerenciadorEntidade.executarDdl("DELETE FROM permissoes WHERE usuario_id = " + criado.getId());
+            // Limpar permissoes explicitamente via PreparedStatement
+            GerenciadorEntidade.executarAtualizacao("DELETE FROM permissoes WHERE usuario_id = ?", criado.getId());
+        }
+    }
+
+    public static void testSequenceSyncAndUserCreation() throws Exception {
+        ConexaoDB.validarDisponibilidade();
+
+        // 1. Inserir usuário com ID explícito elevado (simulando inserção manual ou criação de admin)
+        User userExpl = new User(9999, "__seq_test_explicit__", "hash", "salt", Role.VISUALIZADOR);
+        GerenciadorEntidade.salvar(userExpl);
+
+        try {
+            // 2. Tentar criar novo usuário com ID autoincrementado (id = 0)
+            User userAuto = new User(0, "__seq_test_auto__", "hash", "salt", Role.VISUALIZADOR);
+            User autoSalvo = GerenciadorEntidade.salvar(userAuto);
+
+            if (autoSalvo.getId() <= 9999) {
+                throw new AssertionError("ID do auto-incremento deveria ser maior que 9999 após ressincronização da sequência. Obtido: " + autoSalvo.getId());
+            }
+
+            // 3. Limpar usuário auto-incrementado
+            GerenciadorEntidade.remover(User.class, autoSalvo.getId());
+        } finally {
+            // 4. Limpar usuário com ID explícito
+            GerenciadorEntidade.remover(User.class, 9999);
         }
     }
 }
