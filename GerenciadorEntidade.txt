@@ -56,15 +56,11 @@ public class GerenciadorEntidade {
             stmt = conn.createStatement();
             stmt.execute(sql.toString());
         } catch (SQLException e) {
-            System.err
-                    .println("[GerenciadorEntidade] Erro ao inicializar tabela " + nomeTabela + ": " + e.getMessage());
+            System.err.println("[GerenciadorEntidade] Erro ao inicializar tabela " + nomeTabela + ": " + e.getMessage());
             e.printStackTrace();
         } finally {
             if (stmt != null) {
-                try {
-                    stmt.close();
-                } catch (SQLException ignored) {
-                }
+                try { stmt.close(); } catch (SQLException ignored) {}
             }
             ConexaoDB.liberarConexao(conn);
         }
@@ -74,8 +70,7 @@ public class GerenciadorEntidade {
     }
 
     /**
-     * Verifica se todas as colunas definidas no modelo Java existem na tabela do
-     * banco.
+     * Verifica se todas as colunas definidas no modelo Java existem na tabela do banco.
      * Se alguma estiver faltando, executa ALTER TABLE ADD COLUMN automaticamente.
      */
     private static void migrarColunasNovas(Class<?> classe, String nomeTabela) {
@@ -120,16 +115,13 @@ public class GerenciadorEntidade {
                             alterSql.append(" DEFAULT ").append(col.padrao());
                         }
 
-                        System.out.println(
-                                "[GerenciadorEntidade] Migrando coluna nova: " + nomeTabela + "." + col.nome());
+                        System.out.println("[GerenciadorEntidade] Migrando coluna nova: " + nomeTabela + "." + col.nome());
                         Statement stmt = conn.createStatement();
                         try {
                             stmt.execute(alterSql.toString());
-                            System.out.println(
-                                    "[GerenciadorEntidade] ✓ Coluna " + col.nome() + " adicionada com sucesso.");
+                            System.out.println("[GerenciadorEntidade] ✓ Coluna " + col.nome() + " adicionada com sucesso.");
                         } catch (SQLException e) {
-                            System.err.println("[GerenciadorEntidade] Erro ao migrar coluna " + col.nome() + ": "
-                                    + e.getMessage());
+                            System.err.println("[GerenciadorEntidade] Erro ao migrar coluna " + col.nome() + ": " + e.getMessage());
                         } finally {
                             stmt.close();
                         }
@@ -139,49 +131,52 @@ public class GerenciadorEntidade {
         } catch (Exception e) {
             System.err.println("[GerenciadorEntidade] Erro na auto-migração de " + nomeTabela + ": " + e.getMessage());
         } finally {
-            if (rs != null)
-                try {
-                    rs.close();
-                } catch (SQLException ignored) {
-                }
-            if (pstmt != null)
-                try {
-                    pstmt.close();
-                } catch (SQLException ignored) {
-                }
+            if (rs != null) try { rs.close(); } catch (SQLException ignored) {}
+            if (pstmt != null) try { pstmt.close(); } catch (SQLException ignored) {}
             ConexaoDB.liberarConexao(conn);
         }
     }
 
-    public void salvar(Object entidade) throws Exception {
-        Class<?> classe = entidade.getClass();
-        String tabela = classe.getAnnotation(Entidade.class).nome();
-
-        StringBuilder sql = new StringBuilder("INSERT INTO " + tabela + " (");
-        StringBuilder placeholders = new StringBuilder();
-        List<Object> valores = new ArrayList<>();
-
-        for (Field campo : classe.getDeclaredFields()) {
-            if (campo.isAnnotationPresent(Coluna.class)) {
-                campo.setAccessible(true);
-                sql.append(campo.getAnnotation(Coluna.class).nome()).append(", ");
-                placeholders.append("?, "); // Marcador de segurança
-                valores.add(campo.get(entidade));
-            }
+    public static <T> T salvar(T obj) {
+        Class<?> classe = obj.getClass();
+        if (!classe.isAnnotationPresent(Entidade.class)) {
+            throw new IllegalArgumentException("Classe não é uma @Entidade: " + classe.getName());
         }
 
-        String sqlFinal = sql.substring(0, sql.length() - 2) + ") VALUES (" +
-                placeholders.substring(0, placeholders.length() - 2) + ")";
+        Entidade entidade = classe.getAnnotation(Entidade.class);
+        String nomeTabela = entidade.tabela();
 
-        try (Connection conn = ConexaoDB.obterConexao();
-                PreparedStatement pstmt = conn.prepareStatement(sqlFinal)) {
+        Field idField = obterCampoId(classe);
+        if (idField == null) {
+            throw new IllegalArgumentException("Classe " + classe.getName() + " não possui campo com @Id");
+        }
 
-            for (int i = 0; i < valores.size(); i++) {
-                // O setObject garante que o Role ou a Senha sejam tratados corretamente pelo
-                // JDBC
-                pstmt.setObject(i + 1, valores.get(i));
+        idField.setAccessible(true);
+        try {
+            Object idValValue = idField.get(obj);
+            int idVal = 0;
+            if (idValValue instanceof Number) {
+                idVal = ((Number) idValValue).intValue();
             }
-            pstmt.executeUpdate();
+
+            if (idVal == 0) {
+                // INSERT
+                return inserir(obj, nomeTabela, idField);
+            } else {
+                // UPDATE ou verificar se existe primeiro (UPSERT)
+                // Se existe, UPDATE, senão INSERT
+                if (buscarPorId(classe, idVal).isPresent()) {
+                    return atualizar(obj, nomeTabela, idField, idVal);
+                } else {
+                    return inserirComId(obj, nomeTabela, idField, idVal);
+                }
+            }
+        } catch (PersistenciaException e) {
+            throw e;
+        } catch (SQLException e) {
+            throw new PersistenciaException("Erro ao persistir entidade " + classe.getSimpleName(), e);
+        } catch (Exception e) {
+            throw new PersistenciaException("Erro ao persistir entidade " + classe.getSimpleName(), e);
         }
     }
 
@@ -201,8 +196,7 @@ public class GerenciadorEntidade {
             }
         }
 
-        String sql = "INSERT INTO " + nomeTabela + " (" + String.join(", ", nomesColunas) + ") VALUES ("
-                + String.join(", ", placeholders) + ")";
+        String sql = "INSERT INTO " + nomeTabela + " (" + String.join(", ", nomesColunas) + ") VALUES (" + String.join(", ", placeholders) + ")";
 
         Connection conn = null;
         PreparedStatement pstmt = null;
@@ -225,16 +219,8 @@ public class GerenciadorEntidade {
             }
             return obj;
         } finally {
-            if (rs != null)
-                try {
-                    rs.close();
-                } catch (SQLException ignored) {
-                }
-            if (pstmt != null)
-                try {
-                    pstmt.close();
-                } catch (SQLException ignored) {
-                }
+            if (rs != null) try { rs.close(); } catch (SQLException ignored) {}
+            if (pstmt != null) try { pstmt.close(); } catch (SQLException ignored) {}
             ConexaoDB.liberarConexao(conn);
         }
     }
@@ -255,8 +241,7 @@ public class GerenciadorEntidade {
             }
         }
 
-        String sql = "INSERT INTO " + nomeTabela + " (" + String.join(", ", nomesColunas) + ") VALUES ("
-                + String.join(", ", placeholders) + ")";
+        String sql = "INSERT INTO " + nomeTabela + " (" + String.join(", ", nomesColunas) + ") VALUES (" + String.join(", ", placeholders) + ")";
 
         Connection conn = null;
         PreparedStatement pstmt = null;
@@ -272,26 +257,19 @@ public class GerenciadorEntidade {
 
             pstmt.executeUpdate();
 
-            // Ressincronizar a sequência SERIAL do PostgreSQL para evitar conflitos de ID
-            // em inserções automáticas futuras
+            // Ressincronizar a sequência SERIAL do PostgreSQL para evitar conflitos de ID em inserções automáticas futuras
             Coluna idCol = idField.getAnnotation(Coluna.class);
             String idColNome = (idCol != null) ? idCol.nome() : "id";
-            String syncSql = "SELECT setval(pg_get_serial_sequence(?, ?), COALESCE((SELECT MAX(" + idColNome + ") FROM "
-                    + nomeTabela + "), 1))";
+            String syncSql = "SELECT setval(pg_get_serial_sequence(?, ?), COALESCE((SELECT MAX(" + idColNome + ") FROM " + nomeTabela + "), 1))";
             try (PreparedStatement seqStmt = conn.prepareStatement(syncSql)) {
                 seqStmt.setString(1, nomeTabela);
                 seqStmt.setString(2, idColNome);
                 seqStmt.executeQuery();
-            } catch (Exception ignored) {
-            }
+            } catch (Exception ignored) {}
 
             return obj;
         } finally {
-            if (pstmt != null)
-                try {
-                    pstmt.close();
-                } catch (SQLException ignored) {
-                }
+            if (pstmt != null) try { pstmt.close(); } catch (SQLException ignored) {}
             ConexaoDB.liberarConexao(conn);
         }
     }
@@ -331,11 +309,7 @@ public class GerenciadorEntidade {
             pstmt.executeUpdate();
             return obj;
         } finally {
-            if (pstmt != null)
-                try {
-                    pstmt.close();
-                } catch (SQLException ignored) {
-                }
+            if (pstmt != null) try { pstmt.close(); } catch (SQLException ignored) {}
             ConexaoDB.liberarConexao(conn);
         }
     }
@@ -349,8 +323,7 @@ public class GerenciadorEntidade {
         String nomeTabela = entidade.tabela();
 
         Field idField = obterCampoId(classe);
-        if (idField == null)
-            return Optional.empty();
+        if (idField == null) return Optional.empty();
 
         Coluna idCol = idField.getAnnotation(Coluna.class);
         String idColNome = (idCol != null) ? idCol.nome() : "id";
@@ -371,20 +344,11 @@ public class GerenciadorEntidade {
                 return Optional.of(obj);
             }
         } catch (Exception e) {
-            System.err.println(
-                    "[GerenciadorEntidade] Erro ao buscar " + classe.getSimpleName() + " por ID: " + e.getMessage());
+            System.err.println("[GerenciadorEntidade] Erro ao buscar " + classe.getSimpleName() + " por ID: " + e.getMessage());
             e.printStackTrace();
         } finally {
-            if (rs != null)
-                try {
-                    rs.close();
-                } catch (SQLException ignored) {
-                }
-            if (pstmt != null)
-                try {
-                    pstmt.close();
-                } catch (SQLException ignored) {
-                }
+            if (rs != null) try { rs.close(); } catch (SQLException ignored) {}
+            if (pstmt != null) try { pstmt.close(); } catch (SQLException ignored) {}
             ConexaoDB.liberarConexao(conn);
         }
         return Optional.empty();
@@ -414,20 +378,11 @@ public class GerenciadorEntidade {
                 resultado.add(obj);
             }
         } catch (Exception e) {
-            System.err.println(
-                    "[GerenciadorEntidade] Erro ao buscar todos de " + classe.getSimpleName() + ": " + e.getMessage());
+            System.err.println("[GerenciadorEntidade] Erro ao buscar todos de " + classe.getSimpleName() + ": " + e.getMessage());
             e.printStackTrace();
         } finally {
-            if (rs != null)
-                try {
-                    rs.close();
-                } catch (SQLException ignored) {
-                }
-            if (stmt != null)
-                try {
-                    stmt.close();
-                } catch (SQLException ignored) {
-                }
+            if (rs != null) try { rs.close(); } catch (SQLException ignored) {}
+            if (stmt != null) try { stmt.close(); } catch (SQLException ignored) {}
             ConexaoDB.liberarConexao(conn);
         }
         return resultado;
@@ -442,16 +397,14 @@ public class GerenciadorEntidade {
         Entidade entidade = classe.getAnnotation(Entidade.class);
         String nomeTabela = entidade.tabela();
 
-        // Mapeia o nome do campo da classe para a coluna do banco de dados (se houver
-        // correspondente)
+        // Mapeia o nome do campo da classe para a coluna do banco de dados (se houver correspondente)
         String nomeColuna = campo;
         try {
             Field field = classe.getDeclaredField(campo);
             if (field.isAnnotationPresent(Coluna.class)) {
                 nomeColuna = field.getAnnotation(Coluna.class).nome();
             }
-        } catch (NoSuchFieldException ignored) {
-        }
+        } catch (NoSuchFieldException ignored) {}
 
         String sql = "SELECT * FROM " + nomeTabela + " WHERE " + nomeColuna + " = ?";
 
@@ -469,20 +422,11 @@ public class GerenciadorEntidade {
                 resultado.add(obj);
             }
         } catch (Exception e) {
-            System.err.println("[GerenciadorEntidade] Erro ao buscar " + classe.getSimpleName() + " por " + campo + ": "
-                    + e.getMessage());
+            System.err.println("[GerenciadorEntidade] Erro ao buscar " + classe.getSimpleName() + " por " + campo + ": " + e.getMessage());
             e.printStackTrace();
         } finally {
-            if (rs != null)
-                try {
-                    rs.close();
-                } catch (SQLException ignored) {
-                }
-            if (pstmt != null)
-                try {
-                    pstmt.close();
-                } catch (SQLException ignored) {
-                }
+            if (rs != null) try { rs.close(); } catch (SQLException ignored) {}
+            if (pstmt != null) try { pstmt.close(); } catch (SQLException ignored) {}
             ConexaoDB.liberarConexao(conn);
         }
         return resultado;
@@ -497,8 +441,7 @@ public class GerenciadorEntidade {
         String nomeTabela = entidade.tabela();
 
         Field idField = obterCampoId(classe);
-        if (idField == null)
-            return false;
+        if (idField == null) return false;
 
         Coluna idCol = idField.getAnnotation(Coluna.class);
         String idColNome = (idCol != null) ? idCol.nome() : "id";
@@ -514,16 +457,11 @@ public class GerenciadorEntidade {
             int rows = pstmt.executeUpdate();
             return rows > 0;
         } catch (SQLException e) {
-            System.err
-                    .println("[GerenciadorEntidade] Erro ao remover " + classe.getSimpleName() + ": " + e.getMessage());
+            System.err.println("[GerenciadorEntidade] Erro ao remover " + classe.getSimpleName() + ": " + e.getMessage());
             e.printStackTrace();
             return false;
         } finally {
-            if (pstmt != null)
-                try {
-                    pstmt.close();
-                } catch (SQLException ignored) {
-                }
+            if (pstmt != null) try { pstmt.close(); } catch (SQLException ignored) {}
             ConexaoDB.liberarConexao(conn);
         }
     }
@@ -546,11 +484,7 @@ public class GerenciadorEntidade {
             e.printStackTrace();
             return 0;
         } finally {
-            if (pstmt != null)
-                try {
-                    pstmt.close();
-                } catch (SQLException ignored) {
-                }
+            if (pstmt != null) try { pstmt.close(); } catch (SQLException ignored) {}
             ConexaoDB.liberarConexao(conn);
         }
     }
@@ -566,17 +500,12 @@ public class GerenciadorEntidade {
             System.err.println("[GerenciadorEntidade] Erro ao executar DDL: " + e.getMessage());
             e.printStackTrace();
         } finally {
-            if (stmt != null)
-                try {
-                    stmt.close();
-                } catch (SQLException ignored) {
-                }
+            if (stmt != null) try { stmt.close(); } catch (SQLException ignored) {}
             ConexaoDB.liberarConexao(conn);
         }
     }
 
-    // ==================== Métodos Auxiliares de Mapeamento/Reflexão
-    // ====================
+    // ==================== Métodos Auxiliares de Mapeamento/Reflexão ====================
 
     private static Field obterCampoId(Class<?> classe) {
         for (Field field : classe.getDeclaredFields()) {
@@ -587,8 +516,7 @@ public class GerenciadorEntidade {
         return null;
     }
 
-    private static void setParametroPstmt(PreparedStatement pstmt, int index, Object valor, Class<?> tipo)
-            throws SQLException {
+    private static void setParametroPstmt(PreparedStatement pstmt, int index, Object valor, Class<?> tipo) throws SQLException {
         if (valor == null) {
             pstmt.setNull(index, Types.NULL);
         } else if (tipo.isEnum()) {
