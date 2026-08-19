@@ -2,6 +2,8 @@ package Persistencia;
 
 import Security.User;
 import Security.Permissao;
+import Security.Role;
+import Security.SenhaUtil;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -52,7 +54,7 @@ public class MigradorDados {
             for (String linha : linhas) {
                 if (linha.isBlank() || linha.startsWith("#")) continue;
                 try {
-                    User user = User.deserializar(linha);
+                    User user = deserializarUsuarioLegado(linha);
                     
                     // Salvar usuário via ORM
                     GerenciadorEntidade.salvar(user);
@@ -119,5 +121,54 @@ public class MigradorDados {
             if (pstmt != null) try { pstmt.close(); } catch (SQLException ignored) {}
             ConexaoDB.liberarConexao(conn);
         }
+    }
+
+    /**
+     * Deserializa usuário do formato legado flat-file (users.dat).
+     * Formato: id|username|senhaHash|salt|cargo|ativo|deveTrocarSenha|tenantId|perm1;perm2;...
+     * Método movido de User.java — único consumidor é esta migração.
+     */
+    private static User deserializarUsuarioLegado(String linha) {
+        String[] partes = linha.split("\\|", 8);
+        if (partes.length < 7) {
+            throw new IllegalArgumentException("Formato de usuário inválido: " + linha);
+        }
+
+        int id = Integer.parseInt(partes[0]);
+        String username = partes[1];
+        String senhaHash = partes[2];
+        String salt = partes[3];
+        Role cargo = Role.fromString(partes[4]);
+        boolean ativo = Boolean.parseBoolean(partes[5]);
+        boolean deveTrocarSenha = Boolean.parseBoolean(partes[6]);
+        int tenantId = 1;
+
+        User user = new User(id, username, senhaHash, salt, cargo);
+        user.setAtivo(ativo);
+        user.setDeveTrocarSenha(deveTrocarSenha);
+
+        if (partes.length == 8) {
+            String[] extraParts = partes[7].split("\\|", 2);
+            if (extraParts.length > 0 && !extraParts[0].isBlank()) {
+                try {
+                    tenantId = Integer.parseInt(extraParts[0]);
+                } catch (NumberFormatException e) {
+                    // Fallback
+                }
+            }
+            user.setTenantId(tenantId);
+            if (extraParts.length == 2 && !extraParts[1].isBlank()) {
+                String[] permStrs = extraParts[1].split(";");
+                for (String permStr : permStrs) {
+                    if (!permStr.isBlank()) {
+                        user.adicionarPermissao(Permissao.deserializar(permStr));
+                    }
+                }
+            }
+        } else {
+            user.setTenantId(tenantId);
+        }
+
+        return user;
     }
 }

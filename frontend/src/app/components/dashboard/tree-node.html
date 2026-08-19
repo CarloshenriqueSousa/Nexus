@@ -1,0 +1,65 @@
+<div class="tree-node-item" [class.folder]="node().eh_pasta" [class.file]="!node().eh_pasta" (click)="toggle()">
+  @if (node().eh_pasta) {
+    <span class="chevron" [class.expanded]="expanded()">
+      <svg width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+      </svg>
+    </span>
+  }
+  <span class="node-icon">
+    @if (node().eh_pasta) {
+      <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8" style="color: var(--accent-purple);">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
+      </svg>
+    } @else {
+      <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8" style="color: var(--accent-blue);">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+      </svg>
+    }
+  </span>
+  <span class="node-name">{{ node().nome }}</span>
+  @if (!node().eh_pasta && node().tamanho_bytes > 0) {
+    <span class="node-size">
+      {{ (node().tamanho_bytes / 1024).toFixed(1) }} KB
+    </span>
+  }
+
+  <div class="actions">
+    @if (node().eh_pasta) {
+      <button class="btn-node" (click)="onSelectFolder(node(), $event)" title="Selecionar para Upload">
+        <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/><path stroke-linecap="round" d="M12 8v8m4-4H8"/>
+        </svg>
+      </button>
+    }
+    <button class="btn-node" (click)="onRenameNode(node(), $event)" title="Renomear">
+      <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+      </svg>
+    </button>
+    <button class="btn-node" (click)="onMoveNode(node(), $event)" title="Mover">
+      <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4-4m-4 4l4 4"/>
+      </svg>
+    </button>
+    <button class="btn-node btn-node-danger" (click)="onDeleteNode(node(), $event)" title="Excluir">
+      <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+      </svg>
+    </button>
+  </div>
+</div>
+
+@if (node().eh_pasta && expanded() && node().filhos && node().filhos.length > 0) {
+  <div class="tree-node-children">
+    @for (filho of node().filhos; track filho.id) {
+      <app-tree-node
+        [node]="filho"
+        (folderSelected)="folderSelected.emit($event)"
+        (renameRequested)="renameRequested.emit($event)"
+        (moveRequested)="moveRequested.emit($event)"
+        (deleteRequested)="deleteRequested.emit($event)">
+      </app-tree-node>
+    }
+  </div>
+}

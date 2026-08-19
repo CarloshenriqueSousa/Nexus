@@ -1,0 +1,195 @@
+<div class="landing-page">
+  <!-- NAVBAR -->
+  <nav class="navbar glass-card-solid">
+    <div class="nav-container">
+      <div class="brand">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" class="logo-icon">
+          <rect x="2" y="2" width="20" height="8" rx="2"></rect>
+          <rect x="2" y="14" width="20" height="8" rx="2"></rect>
+        </svg>
+        <span class="brand-text">VAULTRA <span class="accent-text">NEXUS</span></span>
+      </div>
+
+      <div class="nav-links">
+        <a href="#features">Recursos</a>
+        <a href="#core">Nexus Core (Físico)</a>
+        <a href="#pricing">Planos & Preços</a>
+        <a href="#security">Segurança Granular</a>
+      </div>
+
+      <div class="nav-actions">
+        <a routerLink="/login" class="btn btn-ghost btn-sm">Entrar no App</a>
+        <a routerLink="/connection" class="btn btn-primary btn-sm">Baixar Desktop</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- HERO SECTION -->
+  <header class="hero">
+    <div class="hero-badge badge-plan badge-enterprise">
+      <span class="status-dot online"></span>
+      <span>Plataforma Híbrida de Infraestrutura de Dados</span>
+    </div>
+
+    <h1 class="hero-title">
+      Soberania Física Total ou Nuvem de Alta Performance para <span class="accent-text">Projetos Técnicos</span>
+    </h1>
+
+    <p class="hero-subtitle">
+      Conecte seus projetos de engenharia, modelos 3D e documentação técnica em um ecossistema com controle RBAC granular, editor Blueprint Canvas e proteção de dados incomparável.
+    </p>
+
+    <div class="hero-cta">
+      <a routerLink="/login" class="btn btn-primary btn-lg">
+        <span>Acessar Plataforma</span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+          <polyline points="12 5 19 12 12 19"></polyline>
+        </svg>
+      </a>
+      <a href="#pricing" class="btn btn-secondary btn-lg">Ver Planos para Empresas</a>
+    </div>
+
+    <!-- PREVIEW MOCKUP -->
+    <div class="hero-mockup glass-card-solid">
+      <div class="mockup-header">
+        <div class="dots">
+          <span class="dot red"></span>
+          <span class="dot yellow"></span>
+          <span class="dot green"></span>
+        </div>
+        <span class="title">Nexus Desktop App — Blueprint Canvas & Visual Control</span>
+      </div>
+      <div class="mockup-content">
+        <div class="mockup-sidebar">
+          <div class="mockup-item active">📁 Projeto Industrial Alpha</div>
+          <div class="mockup-item">🕸️ Canvas Diagrama 3D</div>
+          <div class="mockup-item">🛡️ Sandbox Server (PostgreSQL)</div>
+        </div>
+        <div class="mockup-main">
+          <div class="mockup-node node-1">
+            <span class="tag">PLANTAS</span>
+            <h4>Planta_Mecanica.dwg</h4>
+          </div>
+          <div class="mockup-node node-2">
+            <span class="tag">CANVAS</span>
+            <h4>Modelo_Estrutural.ifc</h4>
+          </div>
+          <svg class="mockup-line" width="100%" height="100%">
+            <path d="M 120 80 Q 200 40 280 120" stroke="url(#accent-grad)" stroke-width="2.5" fill="none" stroke-dasharray="4 4" />
+            <defs>
+              <linearGradient id="accent-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#6366f1" />
+                <stop offset="100%" stop-color="#8b5cf6" />
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- FEATURES -->
+  <section id="features" class="features-section">
+    <div class="section-header">
+      <h2>Desenvolvido Sob Medida para o Nicho Técnico</h2>
+      <p class="text-secondary">PMEs de Engenharia Civil, Arquitetura e Indústria precisam de mais do que armazenamento genérico em nuvem.</p>
+    </div>
+
+    <div class="features-grid">
+      <div class="feature-card glass-card">
+        <div class="feature-icon">🛡️</div>
+        <h3>Controle Físico Real</h3>
+        <p>Com o <strong>Nexus Core</strong>, o servidor físico fica instalado na sua empresa. Seus arquivos de projeto nunca saem da sua infraestrutura física.</p>
+      </div>
+
+      <div class="feature-card glass-card">
+        <div class="feature-icon">🕸️</div>
+        <h3>Blueprint Canvas</h3>
+        <p>Editor visual interativo para organizar documentos, pastas e especificações técnicas em um mapa relacional em árvore e nós de conexão.</p>
+      </div>
+
+      <div class="feature-card glass-card">
+        <div class="feature-icon">🔑</div>
+        <h3>RBAC Granular & Auditoria</h3>
+        <p>Defina permissões por papel ou usuário (Visualizar, Editar, Deletar, Criar) e acompanhe o histórico completo de logs de modificações.</p>
+      </div>
+
+      <div class="feature-card glass-card">
+        <div class="feature-icon">⚡</div>
+        <h3>Stack Nativa sem Dependências</h3>
+        <p>Servidor HTTP customizado em Java 17 puro, ORM reflexivo proprietário e banco PostgreSQL — zero vulnerabilidades de frameworks externos.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- NEXUS CORE VS SAAS -->
+  <section id="core" class="comparison-section">
+    <div class="section-header">
+      <h2>Escolha a Camada Ideal para seu Negócio</h2>
+      <p class="text-secondary">Do servidor físico local ao SaaS em nuvem privada dedicada.</p>
+    </div>
+
+    <div class="comparison-cards">
+      <!-- CORE -->
+      <div class="plan-card glass-card-solid highlight">
+        <div class="plan-badge">O Diferencial Vaultra</div>
+        <h3>Nexus Core (Appliance)</h3>
+        <p class="plan-desc">Hardware físico dedicado montado e entregue pronto para operação na sua empresa.</p>
+        <div class="price">Consulte <span>/ Hardware + Licença</span></div>
+        <ul class="plan-features">
+          <li>✔️ 100% de soberania dos dados física</li>
+          <li>✔️ Opera sem dependência de internet externa</li>
+          <li>✔️ Expansão física de discos diretamente no servidor</li>
+          <li>✔️ RBAC Multi-usuário em rede local Ethernet</li>
+          <li>✔️ Blueprint Canvas & Sistema de arquivos local</li>
+          <li>✔️ Ideal para escritórios de engenharia e indústria</li>
+        </ul>
+        <a routerLink="/login" class="btn btn-primary" style="width: 100%;">Solicitar Protótipo Core</a>
+      </div>
+
+      <!-- SAAS PME -->
+      <div class="plan-card glass-card-solid">
+        <h3>Nexus Sandbox PME</h3>
+        <p class="plan-desc">Infraestrutura SaaS multi-tenant para pequenos escritórios e autônomos.</p>
+        <div class="price">R$ 149 <span>/ mês por empresa</span></div>
+        <ul class="plan-features">
+          <li>✔️ Acesso imediato sem instalação de hardware</li>
+          <li>✔️ Isolamento lógico de dados por Tenant ID</li>
+          <li>✔️ Suporte a até 10 membros da equipe</li>
+          <li>✔️ Acesso remoto de qualquer lugar (Home Office)</li>
+          <li>✔️ Backup em nuvem automatizado</li>
+        </ul>
+        <a routerLink="/login" class="btn btn-secondary" style="width: 100%;">Iniciar Teste Grátis</a>
+      </div>
+
+      <!-- ENTERPRISE -->
+      <div class="plan-card glass-card-solid">
+        <h3>Nexus Sandbox Enterprise</h3>
+        <p class="plan-desc">Servidor em nuvem totalmente dedicado e isolado por cliente.</p>
+        <div class="price">R$ 890 <span>/ mês dedicado</span></div>
+        <ul class="plan-features">
+          <li>✔️ Servidor em nuvem 100% dedicado (Single-Tenant)</li>
+          <li>✔️ SLA de 99.9% de disponibilidade garantida</li>
+          <li>✔️ Usuários ilimitados e armazenamento expansível</li>
+          <li>✔️ Suporte técnico prioritário e consultoria</li>
+          <li>✔️ Auditoria avançada de ações e segurança</li>
+        </ul>
+        <a routerLink="/login" class="btn btn-secondary" style="width: 100%;">Falar com Consultor</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="footer-container">
+      <div class="brand">
+        <span class="brand-text">VAULTRA <span class="accent-text">NEXUS</span></span>
+        <p class="text-muted" style="font-size: 0.8rem; margin-top: 4px;">Infraestrutura de Dados com Soberania Física para Empresas Técnicas.</p>
+      </div>
+      <div class="copy text-dim">
+        &copy; 2026 Vaultra Security. Todos os direitos reservados. Fundador: Carlos Henrique
+      </div>
+    </div>
+  </footer>
+</div>

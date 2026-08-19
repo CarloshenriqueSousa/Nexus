@@ -15,10 +15,17 @@ public class FilesInfo {
         
         String ext = obterExtensao(nomeArquivo).toLowerCase();
         return switch (ext) {
-            case "obj", "stl", "fbx", "gltf", "glb" -> "3d_model";
-            case "pcb", "brd", "sch", "kicad_pcb" -> "pcb_design";
-            case "dwg", "dxf" -> "autocad";
-            case "png", "jpg", "jpeg", "gif", "svg" -> "imagem";
+            case "obj", "stl", "fbx", "gltf", "glb", "step", "stp", "iges", "igs", "3ds", "blend", "max", "c4d", "3dm" -> "3d_model";
+            case "pcb", "brd", "sch", "kicad_pcb", "kicad_sch", "dsn", "ses" -> "pcb_design";
+            case "dwg", "dxf", "dgn" -> "autocad";
+            case "png", "jpg", "jpeg", "gif", "svg", "bmp", "tiff", "tif", "webp", "ico", "psd", "ai", "eps" -> "imagem";
+            case "py", "java", "ts", "js", "jsx", "tsx", "cpp", "c", "h", "hpp", "rs", "go", "rb", "php", "cs", "swift", "kt", "scala", "sh", "bat", "ps1" -> "codigo";
+            case "pdf", "docx", "doc", "xlsx", "xls", "pptx", "ppt", "odt", "ods", "odp", "rtf" -> "documento";
+            case "zip", "rar", "7z", "tar", "gz", "bz2" -> "comprimido";
+            case "mp4", "avi", "mkv", "mov", "webm" -> "video";
+            case "mp3", "wav", "ogg", "flac", "aac" -> "audio";
+            case "csv", "json", "xml", "yaml", "yml", "toml", "ini", "conf", "properties" -> "dados";
+            case "md", "txt", "log" -> "texto";
             default -> "documento";
         };
     }

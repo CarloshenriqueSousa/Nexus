@@ -7,15 +7,15 @@ import Security.User;
 
 /**
  * CONCEITO: Imutabilidade + Fábrica estática 
- * Versão atualizada com Proteção de Buffer e Limites Anti-DoS corporativos.
+ * Versão atualizada com Leitura Binária Segura (Zero-Copy para uploads gigantes).
  */
 public class HttpRequest {
 	
 	private User user;
 
 	// LIMITES DE SEGURANÇA DE INFRAESTRUTURA
-	private static final int MAX_HEADER_SIZE = 8192;       // 8KB máximo para cabeçalhos (Padrão Apache/Nginx)
-	private static final int MAX_BODY_SIZE = 10485760;     // 10MB máximo para uploads/corpo no workspace
+	private static final int MAX_HEADER_SIZE = 8192;       // 8KB máximo para cabeçalhos
+	private static final int MAX_BODY_SIZE_TEXT = 10485760; // 10MB para JSON/texto em memória
 
 	private final HttpMethod metodo;
 	private final String caminho;
@@ -23,16 +23,21 @@ public class HttpRequest {
 	private final String ipCliente;
 	private final Map<String, String> cabecalhos;
 	private final Map<String, String> parametrosQuery;
-	private final String corpo;
+	private final String corpoTextual;
+	
+	private final InputStream bodyStream;
+	private final long bodyLength;
 
 	private HttpRequest(HttpMethod metodo, String caminho, String versaoHttp, Map<String, String> cabecalhos,
-			Map<String, String> parametrosQuery, String corpo, String ipCliente) {
+			Map<String, String> parametrosQuery, String corpoTextual, InputStream bodyStream, long bodyLength, String ipCliente) {
 		this.metodo = metodo;
 		this.caminho = caminho;
 		this.versaoHttp = versaoHttp;
 		this.cabecalhos = cabecalhos;
 		this.parametrosQuery = parametrosQuery;
-		this.corpo = corpo;
+		this.corpoTextual = corpoTextual;
+		this.bodyStream = bodyStream;
+		this.bodyLength = bodyLength;
 		this.ipCliente = ipCliente;
 	}
 
@@ -41,12 +46,41 @@ public class HttpRequest {
 	}
 
 	public static HttpRequest parse(InputStream entrada, String ipCliente) throws IOException {
-		BufferedReader leitor = new BufferedReader(new InputStreamReader(entrada));
+		// PASSO 1: Ler cabeçalhos em modo binário sem consumir o corpo
+		ByteArrayOutputStream headerBuffer = new ByteArrayOutputStream();
+		int lido;
+		int contadorHeaders = 0;
+		boolean fimCabecalhos = false;
 		
-		/**
-		 * PASSO 1: Linha de requisição
-		 */
-		String linhaDeRequisicao = leitor.readLine();
+		int prev = -1;
+		int prev2 = -1;
+		int prev3 = -1;
+
+		while ((lido = entrada.read()) != -1) {
+			headerBuffer.write(lido);
+			contadorHeaders++;
+			
+			if (contadorHeaders > MAX_HEADER_SIZE) {
+				throw new IOException("Ataque DoS Detectado: Cabeçalhos excederam 8KB.");
+			}
+			
+			if (prev3 == '\r' && prev2 == '\n' && prev == '\r' && lido == '\n') {
+				fimCabecalhos = true;
+				break;
+			}
+			prev3 = prev2;
+			prev2 = prev;
+			prev = lido;
+		}
+
+		if (!fimCabecalhos) {
+			throw new IOException("Requisição HTTP malformada ou conexão encerrada prematuramente.");
+		}
+
+		String headersStr = headerBuffer.toString("US-ASCII");
+		BufferedReader leitorHeaders = new BufferedReader(new StringReader(headersStr));
+		
+		String linhaDeRequisicao = leitorHeaders.readLine();
 		if (linhaDeRequisicao == null || linhaDeRequisicao.isBlank()) {
 			throw new IOException("Requisição vazia recebida");
 		}
@@ -60,12 +94,8 @@ public class HttpRequest {
 		String caminhoCompleto = partes[1];
 		String versaoHttp = partes[2];
 		
-		/**
-		 * PASSO 2: Separar caminho dos parâmetros de Query
-		 */
 		String caminho;
 		Map<String, String> parametrosQuery = new HashMap<>();
-		 
 		int ponto = caminhoCompleto.indexOf('?');
 		if (ponto != -1) {
 			caminho = caminhoCompleto.substring(0, ponto);
@@ -73,21 +103,10 @@ public class HttpRequest {
 		} else {
 			caminho = caminhoCompleto;
 		}
-		 
-		/**
-		 * PASSO 3: Leitura dos cabeçalhos com Trava Anti-DoS
-		 */
+		
 		Map<String, String> cabecalhos = new HashMap<>();
 		String linha;
-		int totalHeaderBytes = 0;
-
-		while ((linha = leitor.readLine()) != null && !linha.isEmpty()) {
-			// Defesa contra estouro de memória por cabeçalhos gigantes
-			totalHeaderBytes += linha.length();
-			if (totalHeaderBytes > MAX_HEADER_SIZE) {
-				throw new IOException("Ataque DoS Detectado: Tamanho dos cabeçalhos excedeu o limite seguro de 8KB.");
-			}
-
+		while ((linha = leitorHeaders.readLine()) != null && !linha.isEmpty()) {
 			int doisPontos = linha.indexOf(':');
 			if (doisPontos != -1) {
 				String nome = linha.substring(0, doisPontos).trim().toLowerCase();
@@ -95,34 +114,42 @@ public class HttpRequest {
 				cabecalhos.put(nome, valor);
 			}
 		}
-		 
-		/**
-		 * PASSO 4: Ler corpo com Trava de Alocação de Memória (Anti-OOM)
-		 */
-		String corpo = "";
+		
+		long length = 0;
 		String tamanhoStr = cabecalhos.get("content-length");
 		if (tamanhoStr != null) {
 			try {
-				int tamanho = Integer.parseInt(tamanhoStr.trim());
-				
-				// Defesa: Impede a alocação de buffers gigantescos na heap do Java
-				if (tamanho > MAX_BODY_SIZE) {
-					throw new IOException("Payload Too Large: O corpo da requisição excede o limite máximo de 10MB.");
-				}
+				length = Long.parseLong(tamanhoStr.trim());
+			} catch (NumberFormatException ignored) {}
+		}
 
-				if (tamanho > 0) {
-					char[] buffer = new char[tamanho];
-					int lidos = leitor.read(buffer, 0, tamanho);
-					if (lidos > 0) {
-						corpo = new String(buffer, 0, lidos);
-					}
+		String contentType = cabecalhos.getOrDefault("content-type", "").toLowerCase();
+		boolean isStream = contentType.contains("application/octet-stream") || contentType.contains("multipart/form-data");
+		
+		String corpo = "";
+		InputStream bodyStream = null;
+
+		if (length > 0) {
+			if (isStream) {
+				// Deixa no stream para leitura manual
+				bodyStream = new BoundedInputStream(entrada, length);
+			} else {
+				// Carrega na memória se for pequeno (JSON)
+				if (length > MAX_BODY_SIZE_TEXT) {
+					throw new IOException("Payload Too Large: O corpo JSON/Texto excede o limite máximo de 10MB.");
 				}
-			} catch (NumberFormatException e) {
-				// Content-Length inválido → ignora o corpo de forma segura
+				byte[] buf = new byte[(int) length];
+				int totalLido = 0;
+				while (totalLido < length) {
+					int read = entrada.read(buf, totalLido, (int) length - totalLido);
+					if (read == -1) break;
+					totalLido += read;
+				}
+				corpo = new String(buf, "UTF-8");
 			}
 		}
 		        
-		return new HttpRequest(metodo, caminho, versaoHttp, cabecalhos, parametrosQuery, corpo, ipCliente);
+		return new HttpRequest(metodo, caminho, versaoHttp, cabecalhos, parametrosQuery, corpo, bodyStream, length, ipCliente);
 	}
 	
 	private static void parsearQueryString(String query, Map<String, String> params) {
@@ -155,9 +182,7 @@ public class HttpRequest {
 
 	public String getCookie(String nome) {
 		String cookies = getCabecalhos("cookie");
-		if (cookies.isBlank()) {
-			return "";
-		}
+		if (cookies.isBlank()) return "";
 
 		for (String parte : cookies.split(";")) {
 			String[] kv = parte.trim().split("=", 2);
@@ -176,16 +201,15 @@ public class HttpRequest {
 		return Collections.unmodifiableMap(parametrosQuery);
 	}
 
-	public String getCorpo() { return corpo; }
+	public String getCorpo() { return corpoTextual; }
+	
+	public InputStream getBodyStream() { return bodyStream; }
+	public long getBodyLength() { return bodyLength; }
 
-	/**
-	 * Parseia o corpo da requisição como dados de formulário (application/x-www-form-urlencoded).
-	 * Reutiliza o parser de query string existente.
-	 */
 	public Map<String, String> getFormData() {
 		Map<String, String> form = new HashMap<>();
-		if (corpo != null && !corpo.isBlank()) {
-			parsearQueryString(corpo, form);
+		if (corpoTextual != null && !corpoTextual.isBlank()) {
+			parsearQueryString(corpoTextual, form);
 		}
 		return form;
 	}
@@ -205,11 +229,33 @@ public class HttpRequest {
 		parametrosPath.put(nome, valor);
 	}
 
-	public void setUser(User user) {
-		this.user = user;
-	}
-	
-	public User getUser() {
-		return user;
+	public void setUser(User user) { this.user = user; }
+	public User getUser() { return user; }
+
+	// Classe utilitária para limitar a leitura do InputStream ao Content-Length
+	public static class BoundedInputStream extends InputStream {
+		private final InputStream in;
+		private long restantes;
+
+		public BoundedInputStream(InputStream in, long size) {
+			this.in = in;
+			this.restantes = size;
+		}
+
+		@Override
+		public int read() throws IOException {
+			if (restantes <= 0) return -1;
+			int res = in.read();
+			if (res != -1) restantes--;
+			return res;
+		}
+
+		@Override
+		public int read(byte[] b, int off, int len) throws IOException {
+			if (restantes <= 0) return -1;
+			int bytesLidos = in.read(b, off, (int) Math.min(len, restantes));
+			if (bytesLidos != -1) restantes -= bytesLidos;
+			return bytesLidos;
+		}
 	}
 }

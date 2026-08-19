@@ -67,6 +67,9 @@ public class GerenciadorEntidade {
 
         // Auto-migração: detectar colunas faltantes e adicioná-las via ALTER TABLE
         migrarColunasNovas(classe, nomeTabela);
+
+        // Auto-criação de Foreign Keys via anotação @ForeignKey
+        criarForeignKeys(classe, nomeTabela);
     }
 
     /**
@@ -133,6 +136,54 @@ public class GerenciadorEntidade {
         } finally {
             if (rs != null) try { rs.close(); } catch (SQLException ignored) {}
             if (pstmt != null) try { pstmt.close(); } catch (SQLException ignored) {}
+            ConexaoDB.liberarConexao(conn);
+        }
+    }
+
+    /**
+     * Cria FK constraints declaradas via anotação @ForeignKey nos campos da entidade.
+     * Usa ALTER TABLE ADD CONSTRAINT com nome determinístico (fk_tabela_coluna).
+     * Se a constraint já existe, ignora silenciosamente.
+     */
+    private static void criarForeignKeys(Class<?> classe, String nomeTabela) {
+        Connection conn = null;
+        try {
+            conn = ConexaoDB.obterConexao();
+
+            for (Field field : classe.getDeclaredFields()) {
+                if (field.isAnnotationPresent(Coluna.class) && field.isAnnotationPresent(ForeignKey.class)) {
+                    Coluna col = field.getAnnotation(Coluna.class);
+                    ForeignKey fk = field.getAnnotation(ForeignKey.class);
+
+                    String nomeConstraint = "fk_" + nomeTabela + "_" + col.nome();
+                    String sql = "ALTER TABLE " + nomeTabela +
+                            " ADD CONSTRAINT " + nomeConstraint +
+                            " FOREIGN KEY (" + col.nome() + ")" +
+                            " REFERENCES " + fk.tabela() + "(" + fk.coluna() + ")";
+
+                    if (!"NO ACTION".equalsIgnoreCase(fk.onDelete())) {
+                        sql += " ON DELETE " + fk.onDelete();
+                    }
+
+                    Statement stmt = conn.createStatement();
+                    try {
+                        stmt.execute(sql);
+                        System.out.println("[GerenciadorEntidade] ✓ FK criada: " + nomeConstraint);
+                    } catch (SQLException e) {
+                        // Constraint já existe — ignorar
+                        if (e.getMessage() != null && e.getMessage().contains("already exists")) {
+                            // Silencioso: FK já foi criada anteriormente
+                        } else {
+                            System.err.println("[GerenciadorEntidade] Erro ao criar FK " + nomeConstraint + ": " + e.getMessage());
+                        }
+                    } finally {
+                        stmt.close();
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("[GerenciadorEntidade] Erro ao criar foreign keys para " + nomeTabela + ": " + e.getMessage());
+        } finally {
             ConexaoDB.liberarConexao(conn);
         }
     }
@@ -467,6 +518,34 @@ public class GerenciadorEntidade {
             e.printStackTrace();
         } finally {
             if (stmt != null) try { stmt.close(); } catch (SQLException ignored) {}
+            ConexaoDB.liberarConexao(conn);
+        }
+    }
+
+    /**
+     * Executa DELETE seguro usando PreparedStatement (previne SQL Injection).
+     * Use este método para todas as deleções dinâmicas em vez de executarDdl().
+     *
+     * @param tabela  nome da tabela
+     * @param coluna  nome da coluna para a cláusula WHERE
+     * @param valor   valor inteiro para filtrar
+     * @return número de linhas afetadas
+     */
+    public static int executarDelete(String tabela, String coluna, int valor) {
+        String sql = "DELETE FROM " + tabela + " WHERE " + coluna + " = ?";
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        try {
+            conn = ConexaoDB.obterConexao();
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, valor);
+            return pstmt.executeUpdate();
+        } catch (SQLException e) {
+            System.err.println("[GerenciadorEntidade] Erro ao executar delete em " + tabela + ": " + e.getMessage());
+            e.printStackTrace();
+            return 0;
+        } finally {
+            if (pstmt != null) try { pstmt.close(); } catch (SQLException ignored) {}
             ConexaoDB.liberarConexao(conn);
         }
     }

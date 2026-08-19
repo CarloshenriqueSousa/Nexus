@@ -1,0 +1,232 @@
+<div class="admin-container">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="brand">
+      <svg width="24" height="24" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="brand-icon">
+        <path d="M24 2L6 10v14c0 10.5 7.8 18.3 18 22 10.2-3.7 18-11.5 18-22V10L24 2z" fill="none"/>
+        <path d="M16 14l8 16 8-16" fill="none"/>
+      </svg>
+      <span class="brand-text">VAULTRA</span>
+    </div>
+
+    <nav class="nav-menu">
+      <a class="menu-item" routerLink="/dashboard">
+        <span class="menu-icon">
+          <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
+          </svg>
+        </span>
+        <span>Projetos</span>
+      </a>
+      <a class="menu-item active">
+        <span class="menu-icon">
+          <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+          </svg>
+        </span>
+        <span>Administração</span>
+      </a>
+    </nav>
+
+    <div class="user-profile">
+      <div class="user-info">
+        <div class="username">{{ authService.currentUser()?.username }}</div>
+        <div class="role">
+          <span class="badge-role badge-admin">
+            {{ authService.currentUser()?.cargo_nome }}
+          </span>
+        </div>
+      </div>
+      <button class="btn-logout" (click)="logout()" title="Sair do sistema">
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+        </svg>
+      </button>
+    </div>
+  </aside>
+
+  <!-- MAIN AREA -->
+  <main class="main-content">
+    <div class="admin-header">
+      <div>
+        <h1>Painel de Controle Administrativo</h1>
+        <p class="text-secondary">Gerencie usuários, permissões e monitore a integridade do sistema</p>
+      </div>
+
+      <div class="tab-buttons">
+        <button class="tab-btn" [class.active]="activeTab() === 'users'" (click)="activeTab.set('users')">
+          <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" style="margin-right: 6px; display: inline-block; vertical-align: middle;">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+          Usuários
+        </button>
+        <button class="tab-btn" [class.active]="activeTab() === 'sandbox'" (click)="activeTab.set('sandbox')">
+          <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" style="margin-right: 6px; display: inline-block; vertical-align: middle;">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8 9l3 3-3 3m5 0h3M4 5h16a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2V7a2 2 0 012-2z" />
+          </svg>
+          Console Sandbox
+        </button>
+      </div>
+    </div>
+
+    @if (activeTab() === 'users') {
+      <div class="admin-workspace-grid">
+        <!-- USER LIST -->
+        <section class="users-list-section glass-card">
+          <div class="section-header">
+            <h3>Usuários Cadastrados</h3>
+            <button class="btn btn-secondary btn-sm" (click)="loadUsers()">
+              <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" style="margin-right: 4px; display: inline-block; vertical-align: middle;">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 7.89" />
+              </svg>
+              Atualizar
+            </button>
+          </div>
+
+          <div class="table-container">
+            <table class="users-table">
+              <thead>
+                <tr>
+                  <th style="width: 80px;">ID</th>
+                  <th>Usuário</th>
+                  <th>Cargo</th>
+                  <th>Status</th>
+                  <th style="width: 100px; text-align: center;">Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                @if (loading()) {
+                  <tr>
+                    <td colspan="5" style="text-align: center; padding: 32px;" class="text-dim">Carregando usuários...</td>
+                  </tr>
+                } @else if (users().length === 0) {
+                  <tr>
+                    <td colspan="5" style="text-align: center; padding: 32px;" class="text-dim">Nenhum usuário cadastrado.</td>
+                  </tr>
+                }
+                @for (u of users(); track u.id) {
+                  <tr>
+                    <td class="font-mono text-dim">#{{ u.id }}</td>
+                    <td style="font-weight: 600;">{{ u.username }}</td>
+                    <td>
+                      <span class="badge-role" [class]="'badge-' + u.cargo.toLowerCase()">
+                        {{ u.cargo_nome }}
+                      </span>
+                    </td>
+                    <td>
+                      <span class="status-indicator" [class.active]="u.ativo">
+                        {{ u.ativo ? '● Ativo' : '● Inativo' }}
+                      </span>
+                    </td>
+                    <td style="text-align: center;">
+                      @if (u.id !== 1) {
+                        <button class="btn btn-danger btn-sm" (click)="deleteUser(u.id)" style="padding: 4px 8px;">
+                          Excluir
+                        </button>
+                      } @else {
+                        <span class="text-dim font-mono" style="font-size: 0.8rem;">Root</span>
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- ADD USER SIDEBAR FORM -->
+        <section class="add-user-section glass-card">
+          <h3>Novo Usuário</h3>
+          <p class="text-muted" style="margin-bottom: 20px;">Crie credenciais de acesso para a equipe</p>
+
+          @if (formError()) {
+            <div class="form-error-alert">
+              {{ formError() }}
+            </div>
+          }
+
+          <form (ngSubmit)="createUser()" class="add-user-form">
+            <div class="form-group">
+              <label class="form-label" for="username">Nome de Usuário</label>
+              <input
+                type="text"
+                id="username"
+                class="form-control"
+                placeholder="Ex: joao_silva"
+                [value]="newUsername()"
+                (input)="newUsername.set($any($event.target).value)"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="password">Senha Inicial</label>
+              <input
+                type="password"
+                id="password"
+                class="form-control"
+                placeholder="Senha forte"
+                [value]="newPassword()"
+                (input)="newPassword.set($any($event.target).value)"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="role">Cargo de Trabalho</label>
+              <select
+                id="role"
+                class="form-control"
+                [value]="newCargo()"
+                (change)="newCargo.set($any($event.target).value)"
+              >
+                <option value="VISUALIZADOR">Visualizador (Somente Leitura)</option>
+                <option value="DESENVOLVEDOR">Desenvolvedor (Criação e Leitura)</option>
+                <option value="ARQUITETO">Arquiteto (Projetos e Canvas)</option>
+                <option value="MODELADOR">Modelador (Controle e Edição)</option>
+                <option value="ADMIN">Administrador (Controle Total)</option>
+              </select>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;" [disabled]="!newUsername().trim() || !newPassword().trim()">
+              Criar Conta
+            </button>
+          </form>
+        </section>
+      </div>
+    } @else {
+      <!-- SANDBOX TERM -->
+      <div class="sandbox-console glass-card">
+        <div class="sandbox-titlebar">
+          <div class="window-dots">
+            <span class="dot close"></span>
+            <span class="dot minimize"></span>
+            <span class="dot maximize"></span>
+          </div>
+          <span class="titlebar-text">nexus@vaultra:~ (Sandbox)</span>
+        </div>
+        <div class="sandbox-screen">
+          <div class="terminal-output">
+            @for (line of shellHistory(); track $index) {
+              <div class="terminal-line" [class]="line.type">
+                {{ line.text }}
+              </div>
+            }
+          </div>
+          <div class="terminal-input-line">
+            <span class="terminal-prompt">nexus&#64;vaultra:~#</span>
+            <input
+              type="text"
+              class="terminal-input"
+              [value]="shellCommand()"
+              (input)="shellCommand.set($any($event.target).value)"
+              (keydown.enter)="executeSandboxCommand()"
+              placeholder="Digite um comando... (ex: help)"
+              autofocus
+            />
+          </div>
+        </div>
+      </div>
+    }
+  </main>
+</div>

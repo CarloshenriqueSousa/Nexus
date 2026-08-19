@@ -28,6 +28,10 @@ public class HttpResponse {
 		return this;
 	}
 
+	public HttpStatus getStatus() {
+		return this.status;
+	}
+
 	public HttpResponse corpo(String conteudo, String tipoConteudo) {
 		this.corpo = conteudo.getBytes(StandardCharsets.UTF_8);
 		cabecalhos.put("Content-Type", tipoConteudo);

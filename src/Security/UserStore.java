@@ -26,39 +26,109 @@ public class UserStore {
 			// 2. Rodar a migração do arquivo users.dat para PostgreSQL
 			MigradorDados.executar();
 
-			// 3. Se nenhum usuário existir, criar o admin padrão no banco
+			// 3. Se nenhum usuário existir, criar os tenants e usuários padrão do SaaS
 			List<User> todos = listarTodos();
 			if (todos.isEmpty()) {
-				System.out.println("[UserStore] Banco de dados vazio. Criando admin padrão...");
-				criarAdminPadrao();
+				System.out.println("[UserStore] Banco de dados vazio. Criando estrutura SaaS padrão...");
+				criarSaaSEstruturaPadrao();
 			}
 		} catch (Exception e) {
 			throw new PersistenciaException("Falha ao inicializar o banco de dados para UserStore.", e);
 		}
 	}
 
-	private void criarAdminPadrao() {
-		String salt = SenhaUtil.gerarSalt();
-		String hash = SenhaUtil.hashear("admin123", salt);
-		User admin = new User(1, "admin", hash, salt, Role.ADMIN);
-		admin.setDeveTrocarSenha(true);
-		
-		// Salvar o usuário para gerar o ID
-		GerenciadorEntidade.salvar(admin);
+	private void criarSaaSEstruturaPadrao() {
+		try {
+			// 1. Criar Tenants
+			Model.Tenant systemTenant = new Model.Tenant(1, "Sistema Principal", "system.local");
+			systemTenant.setPlano("ENTERPRISE");
+			GerenciadorEntidade.salvar(systemTenant);
 
-		// Criar e salvar permissão
-		Permissao perm = Permissao.total("/*");
-		perm.setUsuarioId(admin.getId());
+			Model.Tenant alfaTenant = new Model.Tenant(2, "Empresa Alfa", "alfa.com");
+			alfaTenant.setPlano("ENTERPRISE");
+			GerenciadorEntidade.salvar(alfaTenant);
+
+			Model.Tenant carlosTenant = new Model.Tenant(3, "Plano Individual - Carlos", "carlos.com");
+			carlosTenant.setPlano("INDIVIDUAL");
+			GerenciadorEntidade.salvar(carlosTenant);
+
+			Model.Tenant joaoTenant = new Model.Tenant(4, "Plano Individual - João", "joao.com");
+			joaoTenant.setPlano("INDIVIDUAL");
+			GerenciadorEntidade.salvar(joaoTenant);
+
+			// 2. Criar Usuários
+			// Admin Sistema (Tenant 1)
+			String salt1 = SenhaUtil.gerarSalt();
+			String hash1 = SenhaUtil.hashear("admin123", salt1);
+			User admin = new User(1, "admin", hash1, salt1, Role.ADMIN);
+			admin.setDeveTrocarSenha(true);
+			admin.setTenantId(1);
+			GerenciadorEntidade.salvar(admin);
+			criarSalvarPermissao(admin.getId(), "/*", true, true, true, true);
+
+			// Admin Alfa (Tenant 2)
+			String salt2 = SenhaUtil.gerarSalt();
+			String hash2 = SenhaUtil.hashear("alfa123", salt2);
+			User adminAlfa = new User(2, "admin_alfa", hash2, salt2, Role.ADMIN);
+			adminAlfa.setTenantId(2);
+			GerenciadorEntidade.salvar(adminAlfa);
+			criarSalvarPermissao(adminAlfa.getId(), "/*", true, true, true, true);
+
+			// Modelador Alfa (Tenant 2)
+			String salt3 = SenhaUtil.gerarSalt();
+			String hash3 = SenhaUtil.hashear("alfa123", salt3);
+			User modAlfa = new User(3, "modelador_alfa", hash3, salt3, Role.MODELADOR);
+			modAlfa.setTenantId(2);
+			GerenciadorEntidade.salvar(modAlfa);
+			for (Permissao p : obterPermissoesPadrao(modAlfa)) {
+				p.setUsuarioId(modAlfa.getId());
+				GerenciadorEntidade.salvar(p);
+			}
+
+			// Carlos (Tenant 3)
+			String salt4 = SenhaUtil.gerarSalt();
+			String hash4 = SenhaUtil.hashear("carlos123", salt4);
+			User carlos = new User(4, "carlos", hash4, salt4, Role.MODELADOR);
+			carlos.setTenantId(3);
+			GerenciadorEntidade.salvar(carlos);
+			for (Permissao p : obterPermissoesPadrao(carlos)) {
+				p.setUsuarioId(carlos.getId());
+				GerenciadorEntidade.salvar(p);
+			}
+
+			// João (Tenant 4)
+			String salt5 = SenhaUtil.gerarSalt();
+			String hash5 = SenhaUtil.hashear("joao123", salt5);
+			User joao = new User(5, "joao", hash5, salt5, Role.MODELADOR);
+			joao.setTenantId(4);
+			GerenciadorEntidade.salvar(joao);
+			for (Permissao p : obterPermissoesPadrao(joao)) {
+				p.setUsuarioId(joao.getId());
+				GerenciadorEntidade.salvar(p);
+			}
+
+			// Sincronizar as sequences do PostgreSQL
+			GerenciadorEntidade.executarDdl("SELECT setval(pg_get_serial_sequence('tenants', 'id'), COALESCE(max(id), 1)) FROM tenants;");
+			GerenciadorEntidade.executarDdl("SELECT setval(pg_get_serial_sequence('usuarios', 'id'), COALESCE(max(id), 1)) FROM usuarios;");
+			GerenciadorEntidade.executarDdl("SELECT setval(pg_get_serial_sequence('permissoes', 'id'), COALESCE(max(id), 1)) FROM permissoes;");
+
+			System.out.println("╔══════════════════════════════════════════════╗");
+			System.out.println("║  SaaS Multi-Tenant inicializado com sucesso!║");
+			System.out.println("║  Admin Sistema: admin / admin123            ║");
+			System.out.println("║  Admin Empresa Alfa: admin_alfa / alfa123    ║");
+			System.out.println("║  Carlos (Individual): carlos / carlos123    ║");
+			System.out.println("║  João (Individual): joao / joao123          ║");
+			System.out.println("╚══════════════════════════════════════════════╝");
+		} catch (Exception e) {
+			System.err.println("[UserStore] Erro ao criar dados SaaS padrão: " + e.getMessage());
+			e.printStackTrace();
+		}
+	}
+
+	private void criarSalvarPermissao(int userId, String caminho, boolean ver, boolean editar, boolean deletar, boolean criar) {
+		Permissao perm = new Permissao(caminho, ver, editar, deletar, criar);
+		perm.setUsuarioId(userId);
 		GerenciadorEntidade.salvar(perm);
-		
-		admin.adicionarPermissao(perm);
-
-		System.out.println("╔══════════════════════════════════════════════╗");
-		System.out.println("║  Admin padrão criado no Banco de Dados!     ║");
-		System.out.println("║  Usuário: admin                             ║");
-		System.out.println("║  Senha:   admin123                          ║");
-		System.out.println("║  ⚠ TROQUE A SENHA NO PRIMEIRO LOGIN!       ║");
-		System.out.println("╚══════════════════════════════════════════════╝");
 	}
 
 	// ==================== Consultas ====================
@@ -105,6 +175,10 @@ public class UserStore {
 	 * @return o usuário criado, ou null se username já existe
 	 */
 	public synchronized User criarUsuario(String username, String senha, Role cargo) {
+		return criarUsuario(username, senha, cargo, 1);
+	}
+
+	public synchronized User criarUsuario(String username, String senha, Role cargo, int tenantId) {
 		if (buscarPorUsername(username).isPresent()) {
 			return null;
 		}
@@ -112,6 +186,7 @@ public class UserStore {
 		String salt = SenhaUtil.gerarSalt();
 		String hash = SenhaUtil.hashear(senha, salt);
 		User novoUser = new User(0, username, hash, salt, cargo);
+		novoUser.setTenantId(tenantId);
 
 		// Salva usuário no banco (gera ID)
 		GerenciadorEntidade.salvar(novoUser);
@@ -124,7 +199,7 @@ public class UserStore {
 			novoUser.adicionarPermissao(p);
 		}
 
-		System.out.println("[UserStore] Usuário criado no banco: " + username + " (cargo: " + cargo.getNome() + ")");
+		System.out.println("[UserStore] Usuário criado no banco: " + username + " (cargo: " + cargo.getNome() + ", tenant: " + tenantId + ")");
 		return novoUser;
 	}
 
@@ -148,7 +223,7 @@ public class UserStore {
 		if (opt.isEmpty()) return false;
 
 		// Deletar permissões antigas
-		GerenciadorEntidade.executarDdl("DELETE FROM permissoes WHERE usuario_id = " + id);
+		GerenciadorEntidade.executarDelete("permissoes", "usuario_id", id);
 
 		// Salvar as novas
 		for (Permissao p : novasPermissoes) {

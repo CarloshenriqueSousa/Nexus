@@ -77,8 +77,11 @@ public class Router {
 		this.authManager = new AuthManager(secretFile, expHoras);
 		this.userStore = new UserStore(usersFile);
 
+		int maxReqMin = Integer.parseInt(props.getProperty("max.requests.per.minute", "60"));
+		Security.RateLimiter.configurar(maxReqMin);
+
 		// Carrega rotas públicas
-		String publicRoutesProp = props.getProperty("public.routes", "/,/login,/favicon.ico,/api/health,/api/info");
+		String publicRoutesProp = props.getProperty("public.routes", "/,/login,/api/login,/favicon.ico,/api/health,/api/info,/api/info-server,/api/echo");
 		for (String r : publicRoutesProp.split(",")) {
 			if (!r.isBlank()) rotasPublicas.add(r.trim());
 		}
@@ -126,11 +129,58 @@ public class Router {
 		this.handlerNaoEncontrado = handler;
 		return this;
 	}
+	private void aplicarCors(HttpRequest requisicao, HttpResponse resposta) {
+		String origin = requisicao.getCabecalhos("Origin");
+		if (origin == null || origin.isBlank()) {
+			origin = "*";
+		}
+		resposta.cabecalho("Access-Control-Allow-Origin", origin);
+		resposta.cabecalho("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+		resposta.cabecalho("Access-Control-Allow-Headers", "Content-Type, Authorization, X-File-Name, X-File-Type, X-Folder-Id, Cookie");
+		resposta.cabecalho("Access-Control-Allow-Credentials", "true");
+	}
+
 	public HttpResponse despachar(HttpRequest requisicao) {
+		// 1. Verificar Rate Limiting por IP
+		String ip = requisicao.getIpCliente();
+		if (!Security.RateLimiter.verificarEIncrementar(ip)) {
+			Data.Logger.warn("RateLimiter", "Limite de requisições excedido para o IP: " + ip);
+			return new HttpResponse()
+					.status(HttpStatus.TOO_MANY_REQUESTS)
+					.json(JsonBuilder.erro("Limite de requisições excedido. Tente novamente em um minuto."));
+		}
+
+		if (requisicao.getMetodo() == HttpMethod.OPTIONS) {
+			HttpResponse res = new HttpResponse().status(HttpStatus.NO_CONTENT);
+			aplicarCors(requisicao, res);
+			return res;
+		}
+
+		long startTime = System.currentTimeMillis();
+		HttpResponse resposta = despacharInterno(requisicao);
+		long duration = System.currentTimeMillis() - startTime;
+
+		// Logging estruturado da requisição
+		String username = requisicao.getUser() != null ? requisicao.getUser().getUsername() : "anonimo";
+		Data.Logger.info("Router", String.format("[%s] %s %s -> %d %s (%dms)", 
+				username, requisicao.getMetodo(), requisicao.getCaminho(), 
+				resposta.getStatus().getCode(), resposta.getStatus().getMessage(), duration));
+
+		aplicarCors(requisicao, resposta);
+		return resposta;
+	}
+
+	private HttpResponse despacharInterno(HttpRequest requisicao) {
 		String caminho = requisicao.getCaminho();
 
-		// 1. Tenta extrair usuário do token JWT no cookie
+		// 1. Tenta extrair usuário do token JWT no cookie ou no Header Authorization
 		String token = requisicao.getCookie("session_token");
+		if (token == null || token.isBlank()) {
+			String authHeader = requisicao.getCabecalhos("Authorization");
+			if (authHeader != null && authHeader.startsWith("Bearer ")) {
+				token = authHeader.substring(7).trim();
+			}
+		}
 		if (token != null && !token.isBlank()) {
 			AuthManager.TokenInfo info = authManager.validarToken(token);
 			if (info != null) {
@@ -138,25 +188,31 @@ public class Router {
 			}
 		}
 
-		boolean publica = rotasPublicas.contains(caminho) || prefixosPublicos.stream().anyMatch(caminho::startsWith);
+		boolean publica = !caminho.startsWith("/api/") || rotasPublicas.contains(caminho) || prefixosPublicos.stream().anyMatch(caminho::startsWith);
 
 		// 2. FILTRO DE AUTENTICAÇÃO: Intercepta e protege rotas privadas
 		if (!publica) {
 			if (requisicao.getUser() == null) {
 				System.err.println("[ACESSO BLOQUEADO] Tentativa de acesso não autenticada na rota: " + caminho);
-				if (caminho.startsWith("/api/")) {
-					return new HttpResponse()
-							.status(HttpStatus.UNAUTHORIZED)
-							.json(JsonBuilder.erro("Acesso não autorizado. Faça login."));
-				} else {
-					return HttpResponse.redirect("/login");
-				}
+				return new HttpResponse()
+						.status(HttpStatus.UNAUTHORIZED)
+						.json(JsonBuilder.erro("Acesso não autorizado. Faça login."));
 			}
 
-			// 3. FILTRO DE AUTORIZAÇÃO POR CARGO (Exceto rotas de auto-serviço)
-			boolean rotaAutoServico = caminho.equals("/api/me") || caminho.equals("/logout") || caminho.equals("/workspace/home");
+			// 3. FILTRO DE TROCA DE SENHA FORÇADA
+			// Se o usuário deve trocar a senha, bloqueia TUDO exceto rotas de auto-serviço
+			boolean rotaAutoServico = caminho.equals("/api/me") || caminho.equals("/api/logout")
+					|| caminho.equals("/logout") || caminho.equals("/api/troca-senha");
+
+			User user = requisicao.getUser();
+			if (!rotaAutoServico && user.isDeveTrocarSenha()) {
+				return new HttpResponse()
+						.status(HttpStatus.FORBIDDEN)
+						.json(JsonBuilder.erro("Troca de senha obrigatória. Acesse /troca-senha para continuar."));
+			}
+
+			// 4. FILTRO DE AUTORIZAÇÃO POR CARGO (Exceto rotas de auto-serviço)
 			if (!rotaAutoServico) {
-				User user = requisicao.getUser();
 				boolean permitido = false;
 				switch (requisicao.getMetodo()) {
 					case GET -> permitido = user.podeVer(caminho);

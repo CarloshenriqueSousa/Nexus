@@ -30,6 +30,7 @@ public class Projeto {
     private long atualizadoEm;
 
     @Coluna(nome = "tenant_id", tipo = "INT", naoNulo = true, padrao = "1")
+    @ForeignKey(tabela = "tenants")
     private int tenantId;
 
     public Projeto() {

@@ -1,0 +1,553 @@
+<!-- ================================================================
+     NEXUS BLUEPRINT CANVAS — canvas.html
+     Canvas com suporte a subpastas recursivas e sincronizadas, visualizador universal e editor de texto rico estilo Google Docs.
+     ================================================================ -->
+
+<div class="canvas-container">
+
+  <!-- ══════════════════════════════════════
+       HEADER
+  ══════════════════════════════════════ -->
+  <header class="canvas-header">
+
+    <div class="canvas-header-left">
+      <a class="btn btn-secondary btn-sm" [routerLink]="['/dashboard']">
+        <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+        </svg>
+        Projetos
+      </a>
+
+      <div class="canvas-breadcrumb">
+        <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
+        </svg>
+        <span>Projetos</span>
+        <svg width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+        </svg>
+      </div>
+
+      <div class="canvas-header-title">
+        <h1>{{ projectName() }}</h1>
+        <span>Blueprint Canvas</span>
+      </div>
+
+      @if (activeFolderName()) {
+        <div class="active-folder-badge">
+          <span>Pasta: <strong>{{ activeFolderName() }}</strong></span>
+          <button class="btn-clear-folder" (click)="filterCanvasByFolder(null)" title="Ver todos os nós">✖</button>
+        </div>
+      }
+    </div>
+
+    <!-- Alerta de modo conexão -->
+    <div class="canvas-header-right">
+      @if (connectionMode()) {
+        <div class="connection-alert">
+          <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+          @if (!selectedNodeForLink()) {
+            Selecione o nó de <strong>&nbsp;origem</strong>
+          } @else {
+            Agora selecione o nó de <strong>&nbsp;destino</strong>&nbsp;— origem: "{{ selectedNodeForLink()?.titulo }}"
+          }
+          <button class="btn btn-secondary btn-sm" (click)="toggleConnectionMode(false)">
+            Cancelar
+          </button>
+        </div>
+      }
+    </div>
+
+  </header>
+
+  <!-- ══════════════════════════════════════
+       WORKSPACE
+  ══════════════════════════════════════ -->
+  <div class="canvas-workspace">
+
+    <!-- ── TOOLBAR ── -->
+    <aside class="canvas-toolbar">
+
+      <div class="toolbar-section-label">Adicionar Bloco</div>
+
+      <button class="btn btn-secondary" (click)="addNode('nota')">
+        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+        </svg>
+        Nota de Texto
+      </button>
+
+      <button class="btn btn-secondary" (click)="addNode('pasta')">
+        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
+        </svg>
+        Pasta Lógica
+      </button>
+
+      <button class="btn btn-secondary" (click)="addNode('arquivo')">
+        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+        Arquivo Binário
+      </button>
+
+      <div class="toolbar-divider"></div>
+      <div class="toolbar-section-label">Vínculos</div>
+
+      <button class="btn" [class.btn-primary]="connectionMode()" [class.btn-secondary]="!connectionMode()"
+        [class.connection-active]="connectionMode()" (click)="toggleConnectionMode()">
+        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+        </svg>
+        @if (connectionMode()) { Cancelar Vínculo } @else { Modo Conexão }
+      </button>
+
+      <div class="toolbar-divider"></div>
+      <div class="toolbar-section-label">Legenda</div>
+
+      <div style="display:flex; flex-direction:column; gap:6px; padding:0 4px;">
+        <div style="display:flex; align-items:center; gap:8px; font-size:0.72rem; color:var(--text-3);">
+          <span style="width:10px; height:10px; border-radius:2px; background:rgba(91,141,239,0.8); flex-shrink:0;"></span>
+          Pasta
+        </div>
+        <div style="display:flex; align-items:center; gap:8px; font-size:0.72rem; color:var(--text-3);">
+          <span style="width:10px; height:10px; border-radius:2px; background:rgba(251,191,36,0.8); flex-shrink:0;"></span>
+          Nota / Google Docs
+        </div>
+        <div style="display:flex; align-items:center; gap:8px; font-size:0.72rem; color:var(--text-3);">
+          <span style="width:10px; height:10px; border-radius:2px; background:rgba(74,222,128,0.8); flex-shrink:0;"></span>
+          Arquivo
+        </div>
+      </div>
+
+      <div class="toolbar-divider"></div>
+      <div class="toolbar-section-label">Sistema</div>
+
+      <button class="btn" [class.btn-primary]="sandboxOpen()" [class.btn-secondary]="!sandboxOpen()" (click)="toggleSandbox()">
+        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M4 5h16a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2V7a2 2 0 012-2z" />
+        </svg>
+        Sandbox
+      </button>
+
+    </aside>
+
+    <!-- ── CANVAS BOARD ── -->
+    <div class="canvas-board" 
+         [class.connection-mode-active]="connectionMode()"
+         (mousedown)="startPanning($event)"
+         (wheel)="onWheelZoom($event)">
+
+      <!-- Grid blueprint -->
+      <div class="canvas-grid-pattern"></div>
+
+      <!-- Camada transformável (Zoom & Pan) -->
+      <div class="canvas-transformable" 
+           [style.transform]="'translate(' + panX() + 'px, ' + panY() + 'px) scale(' + (zoomLevel() / 100) + ')'"
+           style="transform-origin: 0 0; width: 100%; height: 100%; position: absolute; inset: 0;">
+
+        <!-- SVG das conexões -->
+        <svg class="canvas-connections-svg" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <marker id="arrow-end" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+              <path d="M 0 1 L 9 5 L 0 9 Z" fill="var(--accent)" opacity="0.6" />
+            </marker>
+            <marker id="dot-start" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="4" markerHeight="4" orient="auto">
+              <circle cx="5" cy="5" r="3.5" fill="var(--accent)" opacity="0.7" />
+            </marker>
+          </defs>
+
+          @for (link of links(); track link.id) {
+            <g>
+              <path [attr.d]="getLinkPath(link)" class="connection-line" marker-start="url(#dot-start)" marker-end="url(#arrow-end)" />
+              <foreignObject [attr.x]="getLinkCenter(link).x - 11" [attr.y]="getLinkCenter(link).y - 11" width="22" height="22">
+                <button class="btn-delete-link" (click)="deleteLink(link.id, $event)" title="Remover ligação">
+                  <svg width="8" height="8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </foreignObject>
+            </g>
+          }
+        </svg>
+
+        <!-- Camada de nós -->
+        <div class="canvas-nodes-layer">
+
+          @for (node of nodes(); track node.id) {
+            <div class="canvas-node" 
+                 [class.cn-pasta]="node.tipo === 'pasta'" 
+                 [class.cn-nota]="node.tipo === 'nota'"
+                 [class.cn-arquivo]="node.tipo === 'arquivo'" 
+                 [class.selectable]="connectionMode()"
+                 [class.link-source]="selectedNodeForLink()?.id === node.id" 
+                 [style.left.px]="node.pos_x"
+                 [style.top.px]="node.pos_y" 
+                 [style.--node-cor]="node.cor" 
+                 (mousedown)="startDragging(node, $event)"
+                 (dblclick)="openFileModal(node, $event)"
+                 (click)="selectNodeForAction(node)">
+              
+              <div class="node-port port-in" title="Entrada"></div>
+
+              <!-- Header do nó -->
+              <div class="node-header">
+                <span class="node-icon">
+                  @if (node.tipo === 'pasta') {
+                    <svg class="node-icon-svg" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" style="color: var(--accent-purple);">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
+                    </svg>
+                  } @else if (node.tipo === 'nota') {
+                    <svg class="node-icon-svg" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" style="color: var(--color-warning);">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                  } @else if (node.tipo === 'arquivo') {
+                    @switch (getFileType(node)) {
+                      @case ('3d_model') {
+                        <svg class="node-icon-svg" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" style="color: var(--accent-cyan);">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                        </svg>
+                      }
+                      @case ('imagem') {
+                        <svg class="node-icon-svg" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" style="color: #a855f7;">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                      }
+                      @case ('codigo') {
+                        <svg class="node-icon-svg" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" style="color: var(--accent-blue);">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                        </svg>
+                      }
+                      @default {
+                        <svg class="node-icon-svg" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" style="color: var(--color-success);">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                      }
+                    }
+                  }
+                </span>
+
+                <span class="node-title" (dblclick)="renameNode(node, $event)" title="Duplo clique para renomear">
+                  {{ node.titulo }}
+                </span>
+
+                <div class="node-header-actions">
+                  <button class="node-action" (click)="openFileModal(node, $event)" title="Abrir/Editar Arquivo">
+                    <svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                  </button>
+                  <button class="node-action" (click)="renameNode(node, $event)" title="Renomear">
+                    <svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                  </button>
+                  <button class="node-action action-danger" (click)="deleteNode(node, $event)" title="Remover nó">
+                    <svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Corpo do nó -->
+              <div class="node-body">
+                @if (node.tipo === 'pasta') {
+                  <div class="folder-node-body">
+                    <div class="folder-node-header">
+                      <span class="node-tag tag-folder">Pasta Lógica</span>
+                      <button class="btn-toggle-subfolders" (click)="toggleFolderExpansion(node.id, $event)">
+                        {{ isFolderExpanded(node.id) ? 'Recolher ▲' : 'Expandir ▼' }}
+                      </button>
+                    </div>
+
+                    <!-- Subpastas & Conteúdo interno sincronizado recursivo -->
+                    @if (isFolderExpanded(node.id)) {
+                      <div class="subfolder-container animate-fadeIn" (click)="$event.stopPropagation()">
+                        <div class="subfolder-actions">
+                          <button class="btn-subfolder-add" (click)="createSubfolderInFolder(node.arquivo_id || node.id, $event)">+ Subpasta</button>
+                          <button class="btn-subfolder-add" (click)="uploadFileToParentFolder(node.arquivo_id || node.id, $event)">+ Arquivo</button>
+                        </div>
+                        
+                        <div class="subfolder-tree-list">
+                          @if (getFolderChildren(node).length === 0) {
+                            <div class="subfolder-empty-text">Nenhum item nesta pasta.</div>
+                          } @else {
+                            @for (child of getFolderChildren(node); track child.id) {
+                              <div class="subfolder-item-row" [class.is-folder]="child.eh_pasta">
+                                @if (child.eh_pasta) {
+                                  <div class="subfolder-item-header" (click)="toggleSubfolderExpansion(child.id, $event)">
+                                    <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color: var(--accent-purple);"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/></svg>
+                                    <span class="subfolder-item-name">{{ child.nome }}</span>
+                                    <span class="subfolder-expand-arrow">{{ isSubfolderExpanded(child.id) ? '▲' : '▼' }}</span>
+                                  </div>
+
+                                  <!-- Sub-nível recursivo ("e assim por diante") -->
+                                  @if (isSubfolderExpanded(child.id) && child.filhos && child.filhos.length > 0) {
+                                    <div class="subfolder-nested-children animate-fadeIn">
+                                      @for (subchild of child.filhos; track subchild.id) {
+                                        <div class="subfolder-nested-item" (click)="openFileModal(subchild, $event)">
+                                          <svg width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color: var(--accent-blue);"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                          <span>{{ subchild.nome }}</span>
+                                        </div>
+                                      }
+                                    </div>
+                                  }
+                                } @else {
+                                  <div class="subfolder-file-row" (click)="openFileModal(child, $event)" title="Clique para abrir no visualizador/editor">
+                                    <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color: var(--color-success);"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                    <span class="subfolder-item-name">{{ child.nome }}</span>
+                                    <span class="subfolder-file-size">{{ (child.tamanho_bytes / 1024).toFixed(1) }} KB</span>
+                                  </div>
+                                }
+                              </div>
+                            }
+                          }
+                        </div>
+                      </div>
+                    }
+                  </div>
+                } @else if (node.tipo === 'nota') {
+                  <span class="node-tag tag-note">Nota / Google Docs</span>
+                  <p class="node-meta">Duplo clique para abrir editor</p>
+                } @else {
+                  <span class="node-tag tag-file">Arquivo Binário</span>
+                  @if (node.arquivo_id) {
+                    <p class="node-meta">id:{{ node.arquivo_id }}</p>
+                  }
+                }
+              </div>
+
+              <div class="node-port port-out" title="Saída"></div>
+
+            </div>
+          }
+
+        </div><!-- /nodes-layer -->
+      </div><!-- /canvas-transformable -->
+    </div><!-- /canvas-board -->
+
+    <!-- ── SANDBOX PANEL (RIGHT) ── -->
+    @if (sandboxOpen()) {
+      <div class="sandbox-panel" style="width: 450px; border-left: 1px solid var(--border-subtle); flex-shrink: 0; z-index: 10;">
+        <div class="sandbox-titlebar">
+          <div class="sandbox-dot sd-r"></div>
+          <div class="sandbox-dot sd-y"></div>
+          <div class="sandbox-dot sd-g"></div>
+          <span class="sandbox-titlebar-label">nexus@vaultra:~ (Sandbox Console)</span>
+        </div>
+        
+        <div class="sandbox-screen">
+          @for (line of shellHistory(); track $index) {
+            <div class="sandbox-line" [class]="line.type">{{ line.text }}</div>
+          }
+        </div>
+
+        <div class="sandbox-input-bar">
+          <span class="sandbox-prompt-indicator">nexus@vaultra:~#</span>
+          <input 
+            type="text" 
+            class="sandbox-input"
+            [value]="shellCommand()"
+            (input)="shellCommand.set($any($event.target).value)"
+            (keydown.enter)="executeSandboxCommand()"
+            placeholder="Comando (ex: help)"
+            autofocus
+          />
+        </div>
+      </div>
+    }
+
+  </div><!-- /workspace -->
+
+  <!-- ══════════════════════════════════════
+       STATUS BAR
+  ══════════════════════════════════════ -->
+  <footer class="canvas-statusbar">
+
+    <div class="status-item">
+      @if (syncStatus() === 'synced') {
+        <span class="status-dot" style="background: var(--color-success);"></span>
+        <span>Sincronizado</span>
+      } @else if (syncStatus() === 'saving') {
+        <span class="status-dot" style="background: var(--color-warning); animation: pulseDot 1s infinite;"></span>
+        <span>Salvando...</span>
+      } @else {
+        <span class="status-dot" style="background: var(--color-error);"></span>
+        <span class="text-error">Erro de Sincronização</span>
+      }
+    </div>
+
+    <div class="status-separator"></div>
+
+    <div class="status-item">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+      </svg>
+      {{ nodes().length }} nós
+    </div>
+
+    <div class="status-item">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101" />
+      </svg>
+      {{ links().length }} ligações
+    </div>
+
+    <div class="status-separator"></div>
+
+    <div class="status-item">
+      ID: {{ projectId() }}
+    </div>
+
+    <div class="status-item status-right">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+      </svg>
+      Zoom {{ zoomLevel() }}%
+    </div>
+
+  </footer>
+
+  <!-- ══════════════════════════════════════
+       VISUALIZADOR UNIVERSAL & EDITOR RICO (GOOGLE DOCS STYLE MODAL)
+  ══════════════════════════════════════ -->
+  @if (activeFileModal()) {
+    <div class="modal-backdrop" (click)="closeFileModal()">
+      <div class="file-modal-card" (click)="$event.stopPropagation()">
+        
+        <!-- MODAL HEADER -->
+        <div class="file-modal-header">
+          <div class="file-modal-title">
+            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" style="color: var(--accent-purple);">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <h3>{{ activeFileModal()?.titulo || activeFileModal()?.nome }}</h3>
+            <span class="file-modal-badge">{{ getMediaCategory(activeFileModal()!) }}</span>
+          </div>
+
+          <div class="file-modal-actions">
+            @if (getMediaCategory(activeFileModal()!) === 'text') {
+              <div class="view-mode-switcher">
+                <button [class.active]="fileViewMode() === 'rich'" (click)="fileViewMode.set('rich')" title="Editor Ricos (Google Docs)">Doc Rico</button>
+                <button [class.active]="fileViewMode() === 'code'" (click)="fileViewMode.set('code')" title="Código / Markdown">Código</button>
+              </div>
+              <button class="btn btn-primary btn-sm" (click)="saveFileModalContent()" [disabled]="isSavingFile()">
+                {{ isSavingFile() ? 'Salvando...' : 'Salvar Alterações' }}
+              </button>
+            }
+            <button class="btn-close-modal" (click)="closeFileModal()">✖</button>
+          </div>
+        </div>
+
+        @if (saveMessage()) {
+          <div class="save-toast animate-fadeIn">{{ saveMessage() }}</div>
+        }
+
+        <!-- MODAL BODY -->
+        <div class="file-modal-body">
+
+          <!-- 1. TEXT / GOOGLE DOCS RICH EDITOR MODE -->
+          @if (getMediaCategory(activeFileModal()!) === 'text') {
+            @if (fileViewMode() === 'rich') {
+              <!-- GOOGLE DOCS TOOLBAR -->
+              <div class="gdocs-toolbar">
+                <button class="gdocs-btn" (click)="execEditorCommand('bold')" title="Negrito (Ctrl+B)"><b>B</b></button>
+                <button class="gdocs-btn" (click)="execEditorCommand('italic')" title="Itálico (Ctrl+I)"><i>I</i></button>
+                <button class="gdocs-btn" (click)="execEditorCommand('underline')" title="Sublinhado (Ctrl+U)"><u>U</u></button>
+                <button class="gdocs-btn" (click)="execEditorCommand('strikeThrough')" title="Tachado"><s>S</s></button>
+                <div class="gdocs-divider"></div>
+                <button class="gdocs-btn" (click)="execEditorCommand('formatBlock', '<h1>')" title="Título 1">H1</button>
+                <button class="gdocs-btn" (click)="execEditorCommand('formatBlock', '<h2>')" title="Título 2">H2</button>
+                <button class="gdocs-btn" (click)="execEditorCommand('formatBlock', '<h3>')" title="Título 3">H3</button>
+                <button class="gdocs-btn" (click)="execEditorCommand('formatBlock', '<p>')" title="Parágrafo">P</button>
+                <div class="gdocs-divider"></div>
+                <button class="gdocs-btn" (click)="execEditorCommand('insertUnorderedList')" title="Lista com Marcadores">• Lista</button>
+                <button class="gdocs-btn" (click)="execEditorCommand('insertOrderedList')" title="Lista Numerada">1. Lista</button>
+                <button class="gdocs-btn" (click)="execEditorCommand('formatBlock', '<blockquote>')" title="Citação">“ ”</button>
+                <div class="gdocs-divider"></div>
+                <button class="gdocs-btn" (click)="execEditorCommand('justifyLeft')" title="Alinhar Esquerda">◄</button>
+                <button class="gdocs-btn" (click)="execEditorCommand('justifyCenter')" title="Centralizar">▲</button>
+                <button class="gdocs-btn" (click)="execEditorCommand('justifyRight')" title="Alinhar Direita">►</button>
+                <button class="gdocs-btn" (click)="execEditorCommand('removeFormat')" title="Limpar Formatação">🧹</button>
+              </div>
+
+              <!-- RICH CONTENTEDITABLE AREA -->
+              <div 
+                #richEditorRef
+                class="rich-editor-area" 
+                contenteditable="true" 
+                (input)="onRichEditorInput()"
+                placeholder="Escreva seu documento aqui estilo Google Docs...">
+              </div>
+            } @else {
+              <!-- CODE / SOURCE TEXTAREA -->
+              <textarea 
+                class="code-editor-area" 
+                [value]="fileContent()" 
+                (input)="fileContent.set($any($event.target).value)"
+                placeholder="Digite o código ou texto...">
+              </textarea>
+            }
+          }
+
+          <!-- 2. IMAGE VIEWER -->
+          @if (getMediaCategory(activeFileModal()!) === 'image') {
+            <div class="media-viewer-container">
+              <img [src]="filePath()" [alt]="activeFileModal()?.titulo || activeFileModal()?.nome" class="media-image-preview" />
+            </div>
+          }
+
+          <!-- 3. PDF VIEWER -->
+          @if (getMediaCategory(activeFileModal()!) === 'pdf') {
+            <div class="media-viewer-container">
+              <iframe [src]="filePath()" class="media-pdf-iframe"></iframe>
+            </div>
+          }
+
+          <!-- 4. AUDIO / VIDEO VIEWER -->
+          @if (getMediaCategory(activeFileModal()!) === 'audio') {
+            <div class="media-viewer-container">
+              <audio controls [src]="filePath()" class="media-audio-player"></audio>
+            </div>
+          }
+          @if (getMediaCategory(activeFileModal()!) === 'video') {
+            <div class="media-viewer-container">
+              <video controls [src]="filePath()" class="media-video-player"></video>
+            </div>
+          }
+
+          <!-- 5. BINARY / OTHER FORMATS -->
+          @if (getMediaCategory(activeFileModal()!) === 'binary') {
+            <div class="binary-info-container">
+              <svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color: var(--text-dim);">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 01-2-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <h4>Arquivo {{ activeFileModal()?.titulo || activeFileModal()?.nome }}</h4>
+              <p class="text-muted" style="font-size: 0.85rem;">Caminho: {{ filePath() }}</p>
+              @if (filePath()) {
+                <a [href]="filePath()" target="_blank" download class="btn btn-primary btn-sm" style="margin-top: 12px;">
+                  Baixar Arquivo
+                </a>
+              }
+            </div>
+          }
+
+        </div>
+
+      </div>
+    </div>
+  }
+
+</div>

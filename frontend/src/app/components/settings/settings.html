@@ -1,0 +1,84 @@
+<div class="settings-page">
+  <div class="settings-header">
+    <h1>Configurações do Usuário & Sistema</h1>
+    <p class="text-secondary">Gerencie suas preferências de interface, conexão com o servidor e segurança.</p>
+  </div>
+
+  <div class="settings-grid">
+    <!-- PREFERÊNCIAS VISUAIS -->
+    <div class="settings-card glass-card-solid">
+      <div class="card-header">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="5"></circle>
+          <line x1="12" y1="1" x2="12" y2="3"></line>
+          <line x1="12" y1="21" x2="12" y2="23"></line>
+        </svg>
+        <h3>Aparência & Tema Visual</h3>
+      </div>
+      <div class="card-body">
+        <div class="setting-item">
+          <div>
+            <strong>Tema Atual</strong>
+            <p class="text-muted">Alterne entre o tema Dark OLED Industrial e o Tema Claro Limpo.</p>
+          </div>
+          <div class="theme-toggle-group">
+            <button class="btn" [class.btn-primary]="themeService.currentTheme() === 'dark'" (click)="themeService.setTheme('dark')">
+              🌙 Escuro
+            </button>
+            <button class="btn" [class.btn-primary]="themeService.currentTheme() === 'light'" (click)="themeService.setTheme('light')">
+              ☀️ Claro
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONEXÃO -->
+    <div class="settings-card glass-card-solid">
+      <div class="card-header">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="2" y="2" width="20" height="8" rx="2"></rect>
+          <rect x="2" y="14" width="20" height="8" rx="2"></rect>
+        </svg>
+        <h3>Servidor & Conexão</h3>
+      </div>
+      <div class="card-body">
+        <div class="setting-item">
+          <div>
+            <strong>Modo de Conexão</strong>
+            <p class="text-muted">Servidor atual: {{ connectionService.config().mode === 'local' ? 'Nexus Core (Rede Local)' : 'Nexus SaaS (Nuvem)' }}</p>
+          </div>
+          <span class="badge-plan badge-enterprise">{{ connectionService.config().mode.toUpperCase() }}</span>
+        </div>
+        <div class="setting-item">
+          <div>
+            <strong>URL do Servidor API</strong>
+            <p class="text-muted">{{ connectionService.getBaseUrl() }}</p>
+          </div>
+          <a routerLink="/connection" class="btn btn-secondary btn-sm">Alterar Endereço</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- SOBRE -->
+    <div class="settings-card glass-card-solid">
+      <div class="card-header">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="16" x2="12" y2="12"></line>
+          <line x1="12" y1="8" x2="12.01" y2="8"></line>
+        </svg>
+        <h3>Sobre o Nexus</h3>
+      </div>
+      <div class="card-body">
+        <p class="text-secondary"><strong>Nexus — Plataforma de Gerenciamento de Projetos Técnicos</strong></p>
+        <p class="text-muted" style="font-size: 0.8rem;">Desenvolvido pela <strong>Vaultra Security</strong> para indústrias, engenharia e arquitetura.</p>
+        <div class="info-badges">
+          <span class="badge-role badge-desenvolvedor">App Desktop v1.0.0</span>
+          <span class="badge-role badge-arquiteto">Servidor Java 17</span>
+          <span class="badge-role badge-modelador">PostgreSQL 15</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

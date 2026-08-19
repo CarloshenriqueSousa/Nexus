@@ -9,6 +9,7 @@ public class NoCanvas {
     private int id;
 
     @Coluna(nome = "projeto_id", tipo = "INTEGER", naoNulo = true)
+    @ForeignKey(tabela = "projetos", onDelete = "CASCADE")
     private int projetoId;
 
     @Coluna(nome = "arquivo_id", tipo = "INTEGER")

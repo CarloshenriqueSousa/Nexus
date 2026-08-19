@@ -56,6 +56,15 @@ public class StaticFilesHandler implements Handler {
 		Path arquivo = diretorioBase.resolve(subpath).normalize();
 
 		if (!arquivo.startsWith(diretorioBase) || !Files.isRegularFile(arquivo)) {
+			if (!caminho.startsWith("/api/")) {
+				Path indexHtml = diretorioBase.resolve("index.html").normalize();
+				if (Files.isRegularFile(indexHtml)) {
+					try {
+						byte[] conteudo = Files.readAllBytes(indexHtml);
+						return HttpResponse.ok().corpo(conteudo, "text/html; charset=utf-8");
+					} catch (IOException ignored) {}
+				}
+			}
 			return HttpResponse.naoEncontrado();
 		}
 

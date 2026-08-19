@@ -9,6 +9,7 @@ public class ArquivoProjeto {
     private int id;
 
     @Coluna(nome = "projeto_id", tipo = "INTEGER", naoNulo = true)
+    @ForeignKey(tabela = "projetos", onDelete = "CASCADE")
     private int projetoId;
 
     @Coluna(nome = "nome", tipo = "VARCHAR(300)", naoNulo = true)

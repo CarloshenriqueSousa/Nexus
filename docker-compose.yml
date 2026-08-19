@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: nexus_db
+    restart: always
+    environment:
+      POSTGRES_DB: nexus_db
+      POSTGRES_USER: nexus
+      POSTGRES_PASSWORD: nexus
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  backend:
+    build: .
+    container_name: nexus_backend
+    restart: always
+    ports:
+      - "8081:8081"
+    environment:
+      DB_URL: "jdbc:postgresql://db:5432/nexus_db"
+      DB_USER: "nexus"
+      DB_PASSWORD: "nexus"
+      DB_POOL_SIZE: "5"
+      JWT_SECRET: "vaultra-nexus-production-secret-change-me"
+    depends_on:
+      - db
+    volumes:
+      - ./public/Workspace:/app/public/Workspace
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: nexus_frontend
+    restart: always
+    ports:
+      - "4200:80"
+      - "4443:443"
+    volumes:
+      - ./certs:/etc/nginx/certs:ro
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:

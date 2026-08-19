@@ -1,0 +1,434 @@
+<div class="dashboard-container">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="brand">
+      <svg width="22" height="22" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="brand-icon">
+        <path d="M24 2L6 10v14c0 10.5 7.8 18.3 18 22 10.2-3.7 18-11.5 18-22V10L24 2z" fill="none"/>
+        <path d="M16 14l8 16 8-16" fill="none"/>
+      </svg>
+      <span class="brand-text">NEXUS</span>
+    </div>
+
+    <nav class="nav-menu">
+      <a class="menu-item active" (click)="selectedProject.set(null)">
+        <span class="menu-icon">
+          <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H6a2 2 0 01-2-2V6z" />
+          </svg>
+        </span>
+        <span>Projetos</span>
+      </a>
+      @if (authService.currentUser()?.cargo === 'ADMIN') {
+        <a class="menu-item" routerLink="/admin">
+          <span class="menu-icon">
+            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+          </span>
+          <span>Administração</span>
+        </a>
+      }
+    </nav>
+
+    <div class="user-profile">
+      <div class="user-info">
+        <div class="username">{{ authService.currentUser()?.username }}</div>
+        <div class="role">
+          <span class="badge-role" [class]="'badge-' + (authService.currentUser()?.cargo || 'visualizador').toLowerCase()">
+            {{ authService.currentUser()?.cargo_nome }}
+          </span>
+        </div>
+      </div>
+      <button class="btn-logout" (click)="logout()" title="Sair do sistema">
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+        </svg>
+      </button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main-content">
+    @if (!selectedProject()) {
+      <!-- ============ TOPBAR ============ -->
+      <div class="topbar">
+        <div class="topbar-left">
+          <span class="topbar-title">Painel de Projetos</span>
+        </div>
+        <div class="topbar-right">
+          <div class="search-bar">
+            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+              <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+            </svg>
+            <input type="text" placeholder="Buscar projetos..." [value]="searchTerm()" (input)="searchTerm.set($any($event.target).value)" />
+            <span class="kbd">⌘K</span>
+          </div>
+          <div class="view-toggle">
+            <button [class.active]="viewMode() === 'grid'" (click)="viewMode.set('grid')" title="Grade">
+              <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+                <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+              </svg>
+            </button>
+            <button [class.active]="viewMode() === 'list'" (click)="viewMode.set('list')" title="Lista">
+              <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                <path stroke-linecap="round" d="M4 6h16M4 12h16M4 18h16"/>
+              </svg>
+            </button>
+          </div>
+          <button class="btn btn-primary btn-sm" (click)="isCreateModalOpen.set(true)">
+            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+              <path stroke-linecap="round" d="M12 5v14m7-7H5"/>
+            </svg>
+            Novo Projeto
+          </button>
+        </div>
+      </div>
+
+      <!-- ============ SCROLL AREA ============ -->
+      <div class="scroll-area">
+
+        <!-- STAT CARDS -->
+        <div class="stats-grid">
+          <div class="stat-card animate-stagger">
+            <div class="stat-icon stat-icon-purple" style="border-radius: var(--radius-md);">
+              <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
+              </svg>
+            </div>
+            <div class="stat-label">Total de Projetos</div>
+            <div class="stat-value">{{ projects().length }}</div>
+          </div>
+          <div class="stat-card animate-stagger">
+            <div class="stat-icon stat-icon-emerald" style="border-radius: var(--radius-md);">
+              <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+            </div>
+            <div class="stat-label">Servidor</div>
+            <div class="stat-value" style="font-size: 1.1rem;">
+              <span class="status-dot pulse" [class.online]="serverStatus() === 'Online'" [class.offline]="serverStatus() !== 'Online'"></span>
+              &nbsp;{{ serverStatus() }}
+            </div>
+          </div>
+          <div class="stat-card animate-stagger">
+            <div class="stat-icon stat-icon-blue" style="border-radius: var(--radius-md);">
+              <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+                <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+              </svg>
+            </div>
+            <div class="stat-label">Banco de Dados</div>
+            <div class="stat-value" style="font-size: 1.1rem;">
+              <span class="status-dot pulse" [class.online]="dbStatus() === 'Conectado'" [class.offline]="dbStatus() !== 'Conectado'"></span>
+              &nbsp;{{ dbStatus() }}
+            </div>
+          </div>
+          <div class="stat-card animate-stagger">
+            <div class="stat-icon stat-icon-cyan" style="border-radius: var(--radius-md);">
+              <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.573-1.066z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+            </div>
+            <div class="stat-label">Java Runtime</div>
+            <div class="stat-value font-mono" style="font-size: 1rem;">{{ javaVersion() }}</div>
+          </div>
+        </div>
+
+        <!-- SECTION HEADER -->
+        <div class="section-header">
+          <h2>
+            @if (searchTerm()) {
+              Resultados para "{{ searchTerm() }}"
+            } @else {
+              Meus Projetos
+            }
+          </h2>
+          <div class="section-actions">
+            <span class="text-dim" style="font-size: 0.78rem;">{{ filteredProjects().length }} projeto(s)</span>
+          </div>
+        </div>
+
+        <!-- PROJECTS GRID VIEW -->
+        @if (viewMode() === 'grid') {
+          <div class="projects-grid">
+            @for (proj of filteredProjects(); track proj.id) {
+              <div class="project-card animate-stagger" (click)="selectProject(proj)">
+                <div class="project-card-body">
+                  <div class="project-card-top">
+                    <div class="project-card-icon">
+                      <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
+                      </svg>
+                    </div>
+                    <button class="project-card-menu" (click)="deleteProject(proj.id, $event)" title="Remover Projeto">
+                      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  </div>
+                  <h3>{{ proj.nome }}</h3>
+                  <p class="project-card-desc">{{ proj.descricao || 'Sem descrição cadastrada para este projeto.' }}</p>
+                </div>
+                <div class="project-card-footer">
+                  <span class="project-card-tag">
+                    <svg width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>
+                    ID: {{ proj.criador_id }}
+                  </span>
+                  <span>Criador #{{ proj.criador_id }}</span>
+                </div>
+              </div>
+            }
+
+            @if (filteredProjects().length === 0 && !searchTerm()) {
+              <div class="project-card animate-stagger" style="cursor: default; border-style: dashed; opacity: 0.7;" (click)="isCreateModalOpen.set(true)">
+                <div class="project-card-body" style="align-items: center; justify-content: center; text-align: center;">
+                  <svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5" style="color: var(--text-dim);">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                  </svg>
+                  <p class="text-muted" style="font-size: 0.85rem;">Crie seu primeiro projeto</p>
+                </div>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- PROJECTS LIST VIEW -->
+        @if (viewMode() === 'list') {
+          <div class="projects-list">
+            @for (proj of filteredProjects(); track proj.id) {
+              <div class="project-list-item animate-stagger" (click)="selectProject(proj)">
+                <div class="project-list-icon">
+                  <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
+                  </svg>
+                </div>
+                <div class="project-list-info">
+                  <h4>{{ proj.nome }}</h4>
+                  <p>{{ proj.descricao || 'Sem descrição' }}</p>
+                </div>
+                <span class="project-list-meta">Criador #{{ proj.criador_id }}</span>
+                <div class="project-list-actions">
+                  <button class="btn-icon" (click)="deleteProject(proj.id, $event)" title="Remover">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- CONSOLE -->
+        <div class="console-panel">
+          <div class="console-header">
+            <h3>
+              <span class="console-header-dot"></span>
+              Console do Sistema
+            </h3>
+            <button class="btn btn-ghost btn-xs" (click)="logs.set([])">Limpar</button>
+          </div>
+          <div class="console-body">
+            @if (logs().length === 0) {
+              <div class="text-dim">Nenhum evento registrado.</div>
+            }
+            @for (log of logs(); track $index) {
+              <div class="console-line">{{ log }}</div>
+            }
+          </div>
+        </div>
+      </div>
+
+    } @else {
+      <!-- ============ PROJECT DETAIL ============ -->
+      <div class="topbar">
+        <div class="topbar-left">
+          <button class="btn btn-ghost btn-sm" (click)="selectedProject.set(null)">
+            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            Voltar
+          </button>
+          <div class="topbar-breadcrumb">
+            <span>Projetos</span>
+            <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M9 5l7 7-7 7"/></svg>
+            <span style="color: var(--text-primary);">{{ selectedProject().nome }}</span>
+          </div>
+        </div>
+        <div class="topbar-right">
+          <a class="btn btn-primary btn-sm" [routerLink]="['/canvas', selectedProject().id]">
+            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+            </svg>
+            Abrir Canvas
+          </a>
+        </div>
+      </div>
+
+      <div class="scroll-area">
+        <div class="project-workspace-grid">
+          <!-- EXPLORER -->
+          <section class="explorer-section">
+            <div class="explorer-header">
+              <h3>Navegador de Arquivos</h3>
+              <button class="btn-icon" (click)="loadFileTree()" title="Atualizar">
+                <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 7.89" />
+                </svg>
+              </button>
+            </div>
+            <div class="explorer-body">
+              @if (fileTree().length === 0) {
+                <div class="empty-state">
+                  <svg width="36" height="36" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
+                  </svg>
+                  <p class="text-muted" style="font-size: 0.85rem;">Nenhum arquivo ou pasta encontrado.</p>
+                  <p class="text-dim" style="font-size: 0.75rem;">Crie pastas ou faça upload para começar.</p>
+                </div>
+              } @else {
+                @for (node of fileTree(); track node.id) {
+                  <app-tree-node
+                    [node]="node"
+                    (folderSelected)="selectFolderForUpload($event)"
+                    (renameRequested)="handleRenameNode($event)"
+                    (moveRequested)="openMoveModal($event)"
+                    (deleteRequested)="handleDeleteNode($event)">
+                  </app-tree-node>
+                }
+              }
+            </div>
+          </section>
+
+          <!-- FILE / FOLDER OPERATIONS -->
+          <section class="ops-section">
+            <div class="ops-card">
+              <h3>Upload de Documento</h3>
+              <p class="text-secondary" style="margin-bottom: 14px; font-size: 0.8rem;">
+                Destino:
+                @if (currentFolder()) {
+                  <span class="upload-dest-badge text-success">
+                    {{ currentFolder().nome }}
+                    <button class="btn-clear-dest" (click)="clearUploadDestination()" title="Voltar para Raiz">✖</button>
+                  </span>
+                } @else {
+                  <span class="upload-dest-badge text-muted">Raiz do Projeto</span>
+                }
+              </p>
+              <div class="upload-dropzone">
+                <input type="file" id="file-uploader" (change)="onFileUpload($event)" style="display: none;" />
+                <label for="file-uploader" class="dropzone-label">
+                  <svg width="28" height="28" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5" style="color: var(--accent-purple);">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                  </svg>
+                  <strong>Clique para selecionar arquivo</strong>
+                  <span class="text-dim" style="font-size: 0.75rem;">Tamanho máximo: 10MB</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="ops-card">
+              <h3>Criar Nova Pasta</h3>
+              <p class="text-secondary" style="font-size: 0.8rem;">
+                Nível: {{ currentFolder() ? currentFolder().nome : 'Raiz' }}
+              </p>
+              <form (ngSubmit)="createFolder()" class="create-folder-form">
+                <input
+                  type="text"
+                  class="form-control"
+                  placeholder="Nome da pasta"
+                  [value]="newFolderName()"
+                  (input)="newFolderName.set($any($event.target).value)"
+                  required
+                />
+                <button type="submit" class="btn btn-secondary btn-sm" [disabled]="!newFolderName().trim()" style="width: 100%;">
+                  Criar Pasta
+                </button>
+              </form>
+            </div>
+          </section>
+        </div>
+      </div>
+    }
+  </main>
+
+  <!-- ============ MODALS ============ -->
+
+  <!-- CREATE PROJECT MODAL -->
+  @if (isCreateModalOpen()) {
+    <div class="modal-backdrop" (click)="isCreateModalOpen.set(false)">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Criar Novo Projeto</h3>
+          <button class="btn-close-modal" (click)="isCreateModalOpen.set(false)">✖</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Nome do Projeto</label>
+            <input
+              type="text"
+              class="form-control"
+              placeholder="Ex: Sistema de Vendas"
+              [value]="newProjectName()"
+              (input)="newProjectName.set($any($event.target).value)"
+              (keydown.enter)="createProject()"
+            />
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label">Descrição (opcional)</label>
+            <input
+              type="text"
+              class="form-control"
+              placeholder="Breve descrição do escopo do projeto"
+              [value]="newProjectDesc()"
+              (input)="newProjectDesc.set($any($event.target).value)"
+              (keydown.enter)="createProject()"
+            />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-ghost btn-sm" (click)="isCreateModalOpen.set(false)">Cancelar</button>
+          <button class="btn btn-primary btn-sm" (click)="createProject()" [disabled]="!newProjectName().trim()">
+            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+              <path stroke-linecap="round" d="M12 5v14m7-7H5"/>
+            </svg>
+            Criar Projeto
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- MOVE ITEM MODAL -->
+  @if (isMoveModalOpen()) {
+    <div class="modal-backdrop" (click)="closeMoveModal()">
+      <div class="move-modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Mover Item</h3>
+          <button class="btn-close-modal" (click)="closeMoveModal()">✖</button>
+        </div>
+        <div class="modal-body">
+          <p style="margin-bottom: 14px; font-size: 0.85rem;">
+            Mover <strong>{{ itemToMove()?.nome }}</strong> para:
+          </p>
+          <div class="form-group" style="margin-bottom: 0;">
+            <select class="form-control" [value]="targetFolderId() || 'raiz'" (change)="setTargetFolderId($any($event.target).value)">
+              <option value="raiz">Diretório Raiz</option>
+              @for (folder of availableFolders(); track folder.id) {
+                <option [value]="folder.id">{{ folder.caminhoExibicao }}</option>
+              }
+            </select>
+          </div>
+          @if (moveModalError()) {
+            <p class="text-error" style="font-size: 0.78rem; margin-top: 10px;">{{ moveModalError() }}</p>
+          }
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-ghost btn-sm" (click)="closeMoveModal()">Cancelar</button>
+          <button class="btn btn-primary btn-sm" (click)="confirmMoveItem()">Confirmar</button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

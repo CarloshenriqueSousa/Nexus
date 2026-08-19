@@ -20,6 +20,7 @@ public class Permissao {
 	private int id;
 
 	@Coluna(nome = "usuario_id", tipo = "INTEGER")
+	@ForeignKey(tabela = "usuarios", onDelete = "CASCADE")
 	private int usuarioId;
 
 	@Coluna(nome = "caminho_permitido", tipo = "VARCHAR(500)")

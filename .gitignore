@@ -15,3 +15,5 @@ config/users.dat
 *~
 .~lock.*
 .DS_Store
+javac.*.args
+

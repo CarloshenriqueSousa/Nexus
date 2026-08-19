@@ -55,7 +55,9 @@ public class HttpServer {
 	public HttpServer(int porta, Router router) {
 		this.porta = porta;
 		this.router = router;
-		this.poolDeThreads = Executors.newFixedThreadPool(10);
+		// CachedThreadPool permite criar novas threads sob demanda e reaproveitá-las
+		// Evita starvation de I/O em SaaS com uploads simultâneos.
+		this.poolDeThreads = Executors.newCachedThreadPool();
 	}
 	
 	/**
@@ -79,7 +81,7 @@ public class HttpServer {
 		System.out.println("=".repeat(50));
         System.out.println("  Servidor HTTP iniciado!");
         System.out.println("  URL: http://localhost:" + porta);
-        System.out.println("  Threads no pool: 10");
+        System.out.println("  Threads no pool: Dinâmico (CachedThreadPool)");
         System.out.println("=".repeat(50));
         
         while (rodando) {

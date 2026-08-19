@@ -1,0 +1,57 @@
+# ============================================================
+# Nexus — Arquivo de Configuração de Segurança
+# ============================================================
+# Copie este arquivo para "security.properties" e ajuste os
+# valores antes de iniciar o servidor pela primeira vez.
+#
+# Todas as configurações podem ser sobrescritas via variáveis
+# de ambiente. A precedência é: ENV VAR > arquivo > fallback.
+# ============================================================
+
+# ── JWT (Autenticação) ──────────────────────────────────────
+# Tempo de expiração do token JWT em horas (padrão: 24)
+jwt.expiracao.horas=24
+
+# Caminho do arquivo contendo a chave secreta para assinar tokens JWT.
+# Se o arquivo não existir, uma chave aleatória será gerada em memória
+# (tokens serão invalidados a cada reinício do servidor).
+# Variável de ambiente alternativa: JWT_SECRET
+jwt.secret.file=config/jwt_secret.key
+
+# ── Arquivo de Usuários Legado ──────────────────────────────
+# Caminho do arquivo flat-file de usuários (formato legado).
+# Usado apenas na migração inicial para PostgreSQL.
+# Após a migração, este arquivo pode ser removido.
+users.file=config/users.dat
+
+# ── Rotas Públicas ──────────────────────────────────────────
+# Rotas que NÃO exigem autenticação JWT.
+# Separadas por vírgula. Caminhos exatos.
+public.routes=/,/login,/api/login,/favicon.ico,/api/health,/api/info,/api/info-server,/api/echo
+
+# Prefixos de rotas públicas (tudo que começa com esses prefixos é público).
+public.prefixes=/public/,/css/,/js/,/assets/
+
+# ── Rate Limiting ───────────────────────────────────────────
+# Número máximo de requisições por IP por minuto.
+# Protege contra brute-force e DDoS básico.
+# Variável de ambiente alternativa: MAX_REQUESTS_PER_MINUTE
+max.requests.per.minute=60
+
+# ── Banco de Dados (PostgreSQL) ─────────────────────────────
+# URL JDBC de conexão com o PostgreSQL.
+# Variável de ambiente alternativa: DB_URL
+db.url=jdbc:postgresql://localhost:5432/nexus_db
+
+# Usuário do banco de dados.
+# Variável de ambiente alternativa: DB_USER
+db.user=nexus
+
+# Senha do banco de dados.
+# ATENÇÃO: Não use a senha padrão em produção!
+# Variável de ambiente alternativa: DB_PASSWORD
+db.password=TROCAR_ANTES_DE_PRODUÇÃO
+
+# Número de conexões no pool base. O teto máximo é 2x este valor.
+# Variável de ambiente alternativa: DB_POOL_SIZE
+db.pool.size=5
